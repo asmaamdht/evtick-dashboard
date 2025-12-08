@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Layout from "../layouts/Layout";
 import DashboardPage from "../pages/DashboardPage";
 import SettingPage from "../pages/SettingPage";
@@ -8,48 +8,44 @@ import ChatPage from "../pages/ChatPage";
 import AttendancePage from "../pages/AttendancePage";
 import TicketsPage from "../pages/TicketsPage";
 import AnalysizePage from "../pages/AnalysizePage";
+import Login from "../auth/login/Login";
+import AuthLayout from "../auth/components/AuthLayout";
+import ProtectedRoute from "./ProtectedRoute";
+import ResetPassword from "../auth/password/ResetPassword";
+import ForgetPassword from "../auth/password/ForgotPassword";
 
 
-const router = createBrowserRouter([
-    {
-        path: "/",
-        element: <Layout />,
-        children: [
-            {
-                index: true,
-                element: <DashboardPage />,
-            },
-            {
-                path: "chat",
-                element: <ChatPage />,
-            },
-            {
-                path: "settings",
-                element: <SettingPage />,
-            },
-            {
-                path: "create-event",
-                element: <CreateEventPage />,
-            },
-            {
-                path: "manage-events",
-                element: <ManageEventPage />,
-            },
-            {
-                path: "attendance",
-                element: <AttendancePage />,
-            },
-            {
-                path: "tickets",
-                element: <TicketsPage />,
-            },
-            {
-                path: "analysize",
-                element: <AnalysizePage />,
-            },
 
-        ],
-    },
-]);
+export default function AppRoutes() {
+  return (
+       <Routes>
 
-export default router;
+        {/* AUTH LAYOUT */}
+        <Route element={<AuthLayout />}>
+          <Route index element={<Login />} />
+          <Route path="forgot-password" element={<ForgetPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
+        </Route>
+
+        {/* DASHBOARD LAYOUT */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<DashboardPage />} />
+          <Route path="chat" element={<ChatPage />} />
+          <Route path="settings" element={<SettingPage />} />
+          <Route path="create-event" element={<CreateEventPage />} />
+          <Route path="manage-events" element={<ManageEventPage />} />
+          <Route path="attendance" element={<AttendancePage />} />
+          <Route path="tickets" element={<TicketsPage />} />
+          <Route path="analysize" element={<AnalysizePage />} />
+        </Route>
+
+      </Routes>
+  )
+}
