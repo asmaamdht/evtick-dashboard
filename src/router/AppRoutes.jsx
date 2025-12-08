@@ -13,6 +13,7 @@ import AuthLayout from "../auth/components/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import ResetPassword from "../auth/password/ResetPassword";
 import ForgetPassword from "../auth/password/ForgotPassword";
+import DashboardLayout from "../layouts/DashboardLayout";
 
 
 
