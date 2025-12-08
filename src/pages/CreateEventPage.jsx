@@ -1,12 +1,9 @@
 import React from 'react'
-import EventForm from '../components/events/EventForm'
+import CreateOrEditEvent from '../components/events/createEvent.jsx'
 
 function CreateEventPage() {
   return (
-    <div>
-
-      <EventForm />
-    </div>
+    <CreateOrEditEvent />
   )
 }
 
