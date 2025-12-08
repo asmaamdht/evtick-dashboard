@@ -1,13 +1,20 @@
-import React from 'react'
-import Chart from '../components/analysize/Chart'
+import React from "react";
+import CustomEvents from "../components/dashboard/CustomEvents";
+import AnalyticsCards from "../components/dashboard/AnalyticsCards";
+
+
 
 function DashboardPage() {
   return (
-    <div>
+    <div className="flex justify-between">
 
-      <Chart />
+      <div>
+        <AnalyticsCards />
+      </div>
+
+      <CustomEvents />
     </div>
-  )
+  );
 }
 
-export default DashboardPage
+export default DashboardPage;
