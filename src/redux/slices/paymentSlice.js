@@ -1,60 +1,104 @@
 // src/redux/slices/paymentSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { db, auth } from "../../firebase/firebase.config";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../../firebase/firebase.config";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
-// Action لحفظ Payment في Firebase
-export const savePayment = createAsyncThunk(
-  "payment/savePayment",
-  async (paymentData, { rejectWithValue }) => {
+// ==========================
+// Fetch all payments (for testing without filter)
+export const fetchAllPayments = createAsyncThunk(
+  "payment/fetchAllPayments",
+  async (_, { rejectWithValue }) => {
     try {
-      if (!auth.currentUser) throw new Error("User not logged in");
+      const paymentsSnap = await getDocs(collection(db, "payments"));
 
-      const dataToSave = {
-        ...paymentData,
-        userId: auth.currentUser.uid,
-        createdAt: serverTimestamp(),
-        status: "completed"
-      };
+      const payments = paymentsSnap.docs.map((doc) => {
+        const data = doc.data();
 
-      const docRef = await addDoc(collection(db, "payments"), dataToSave);
+        // تحويل أي Timestamps لـ JS Date
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.() || null,
+          eventDate: data.eventDate?.toDate?.() || null,
+        };
+      });
 
-      return { id: docRef.id, ...dataToSave };
+      console.log("All payments fetched:", payments);
+      return payments;
+    } catch (err) {
+      console.error("Error fetching all payments:", err);
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+// ==========================
+// Fetch payments by organizer
+export const fetchOrganizerPayments = createAsyncThunk(
+  "payment/fetchOrganizerPayments",
+  async (organizerName, { rejectWithValue }) => {
+    try {
+      const paymentsSnap = await getDocs(
+        query(collection(db, "payments"), where("eventOwner", "==", organizerName))
+      );
+
+      const payments = paymentsSnap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate?.() || null,
+          eventDate: data.eventDate?.toDate?.() || null,
+        };
+      });
+
+      console.log(`Payments fetched for ${organizerName}:`, payments);
+      return payments;
     } catch (err) {
       return rejectWithValue(err.message);
     }
   }
 );
 
+// ==========================
 const paymentSlice = createSlice({
   name: "payment",
   initialState: {
-    currentPayment: null,
+    organizerPayments: [],
     loading: false,
     error: null,
   },
-  reducers: {
-    clearPayment(state) {
-      state.currentPayment = null;
-      state.error = null;
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(savePayment.pending, (state) => {
+      // fetchAllPayments
+      .addCase(fetchAllPayments.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(savePayment.fulfilled, (state, action) => {
+      .addCase(fetchAllPayments.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentPayment = action.payload;
+        state.organizerPayments = action.payload;
       })
-      .addCase(savePayment.rejected, (state, action) => {
+      .addCase(fetchAllPayments.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // fetchOrganizerPayments
+      .addCase(fetchOrganizerPayments.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchOrganizerPayments.fulfilled, (state, action) => {
+        state.loading = false;
+        state.organizerPayments = action.payload;
+      })
+      .addCase(fetchOrganizerPayments.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
-  }
+  },
 });
 
-export const { clearPayment } = paymentSlice.actions;
 export default paymentSlice.reducer;
