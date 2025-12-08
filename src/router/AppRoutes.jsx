@@ -39,7 +39,7 @@ export default function AppRoutes() {
           <Route index element={<DashboardPage />} />
           <Route path="chat" element={<ChatPage />} />
           <Route path="settings" element={<SettingPage />} />
-          <Route path="create-event" element={<CreateEventPage />} />
+          <Route path="create-event/:eventId?" element={<CreateEventPage />} />
           <Route path="manage-events" element={<ManageEventPage />} />
           <Route path="attendance" element={<AttendancePage />} />
           <Route path="tickets" element={<TicketsPage />} />
