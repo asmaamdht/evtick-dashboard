@@ -29,10 +29,16 @@ export default function validate(form) {
     
  // Total tickets
   if (!form.totalTickets || form.totalTickets === "") {
-    e.totalTickets = "Required";
-  } else if (Number(form.totalTickets) < 0) {
+  e.totalTickets = "Required";
+} else {
+  const value = Number(form.totalTickets);
+  if (value < 0) {
     e.totalTickets = "Cannot be negative";
+  } else if (value === 0) {
+    e.totalTickets = "Cannot be zero";
   }
+}
+
 
   // Ticket prices
   ["priceA", "priceB", "priceC", "priceD"].forEach((key) => {
