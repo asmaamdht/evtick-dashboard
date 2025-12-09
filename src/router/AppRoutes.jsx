@@ -13,6 +13,7 @@ import AuthLayout from "../auth/components/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import ResetPassword from "../auth/password/ResetPassword";
 import ForgetPassword from "../auth/password/ForgotPassword";
+import GuestRoute from "../auth/components/GuestRoute";
 import DashboardLayout from "../layouts/DashboardLayout";
 
 
@@ -23,9 +24,21 @@ export default function AppRoutes() {
 
         {/* AUTH LAYOUT */}
         <Route element={<AuthLayout />}>
-          <Route index element={<Login />} />
-          <Route path="forgot-password" element={<ForgetPassword />} />
-          <Route path="reset-password" element={<ResetPassword />} />
+          <Route index element={
+          <GuestRoute>
+            <Login /> 
+            </GuestRoute>
+            } />
+          <Route path="forgot-password" element={
+            <GuestRoute>
+            <ForgetPassword />
+            </GuestRoute>
+            } />
+          <Route path="reset-password" element={
+            <GuestRoute>
+            <ResetPassword />
+            </GuestRoute>
+            } />
         </Route>
 
         {/* DASHBOARD LAYOUT */}

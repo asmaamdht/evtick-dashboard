@@ -60,7 +60,14 @@ export default function Login() {
         eventOwner: userData.eventOwner,
       }));
 
-      dispatch(setUser(userData));
+      dispatch(setUser({
+      uid: cred.user.uid,
+      fullName: userData.fullName,
+      email: userData.email,
+      phone: userData.phone,
+      role: userData.role,
+      eventOwner: userData.eventOwner,
+    }));   //(userData)
 
       switch (userData.role) {
         case "admin": navigate("/admin"); break;

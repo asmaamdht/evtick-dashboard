@@ -1,8 +1,13 @@
 // EventForm.jsx
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+//import "react-datepicker/dist/react-datepicker.css";
 import Textarea from "./Textarea";
 import { useParams } from "react-router-dom";
+//import DatePicker from "react-datepicker";
+import Datetime from "react-datetime";
+import dayjs from "dayjs";
+import "react-datetime/css/react-datetime.css";
+import "../../style/index.css";  
 
 export default function EventForm({
   form,
@@ -18,12 +23,10 @@ export default function EventForm({
   ];
   const { eventId } = useParams();
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
 
-   return (<div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded">
-       <h2 className=" text-4xl font-bold mb-6">{eventId?"Edit Event":"Create Event"}</h2>
-      <div className="grid grid-cols-3 gap-4">
+   return (<div className="max-w-4xl">  
+       {/* <h2 className=" text-4xl font-bold mb-6">{eventId?"Edit Event":"Create Event"}</h2> */}
+      <div className="grid grid-cols-4 gap-4">
         <Field label="Event Name" value={form.eventName} onChange={v=>update("eventName",v)} error={errors.eventName}/>
         
         {/* type and auto suggest */}
@@ -43,8 +46,21 @@ export default function EventForm({
             </div>
           )}
         </div>
-  
         <Field label="Address" value={form.address} onChange={v=>update("address",v)} error={errors.address} className="mt-3"/>
+   
+   <div>
+   <label className="">Event Image URL</label>
+        <input
+    type="url"
+    value={form.photo}
+    placeholder="https://image.com/img.jpg"
+    onChange={e => update("photo", e.target.value)}
+    className={`w-full p-2 border rounded mt-1 ${errors.photo ? "border-red-500" : ""}`}
+  />
+  {errors.photo && <p className="text-xs text-red-500">{errors.photo}</p>}
+  
+      </div>
+ 
   </div>
     <div className=" grid grid-cols-2 gap-10">
   
@@ -73,31 +89,34 @@ export default function EventForm({
   {/* calender and time picker*/}
   <div className="mt-4 rounded-lg ">
     {/* <p className="font-medium mb-2">Select Date & Time</p> */}
-    <div className="rounded-lg flex">
-    <DatePicker
-      selected={
-        form.date && form.time
-          ? new Date(`${form.date}T${form.time}`)
-          : null
-      }
-      onChange={(date) => {
-        // Update iput feilds instantly
-        update("date", date.toISOString().split("T")[0]);
-        update("time", date.toTimeString().slice(0, 5));
-      }}
-      inline
-      showTimeSelect
-      timeFormat="HH:mm"
-      timeIntervals={15}
-      timeCaption="Time"
-      dateFormat="MMMM d, yyyy h:mm aa"
-      minDate={tomorrow} 
-    />
-    </div>
+    <div className=" rounded-xl border shadow mt-4">
+  {/* <p className="font-semibold mb-3">Select Date & Time</p> */}
+
+  <Datetime
+    value={
+      form.date && form.time
+        ? dayjs(`${form.date}T${form.time}`).toDate()
+        : null
+    }
+    onChange={(date) => {
+      const d = dayjs(date);
+      update("date", d.format("YYYY-MM-DD"));
+      update("time", d.format("HH:mm"));
+    }}
+    timeFormat="HH:mm"
+    dateFormat="YYYY-MM-DD"
+    input={false}       // keeps it always open
+    isValidDate={(currentDate) => {
+    // disable today and all past dates
+    const tomorrowDate = dayjs().add(1, "day").startOf("day");
+    return currentDate.isAfter(tomorrowDate); 
+  }}
+  />
+</div>
   </div>
   
     {/* total tickets and mode */}
- <div className="grid grid-cols-2 gap-4 mt-3 ">
+ <div className="grid grid-cols-2 gap-4 mt-4 ">
       <Field type="number" 
       label="Total Tickets" 
       value={form.totalTickets} 
@@ -113,18 +132,7 @@ export default function EventForm({
   </div>
 
    {/* Image field */}
-   <div className="mt-5">
-   <label className="font-medium">Event Image URL</label>
-        <input
-    type="url"
-    value={form.photo}
-    placeholder="https://image.com/img.jpg"
-    onChange={e => update("photo", e.target.value)}
-    className={`w-full p-2 border rounded mt-1 ${errors.photo ? "border-red-500" : ""}`}
-  />
-  {errors.photo && <p className="text-xs text-red-500">{errors.photo}</p>}
   
-      </div>
       {form.photo && <img src={form.photo} className="w-full mt-2 rounded shadow"/>}
       </div>
   
@@ -134,7 +142,7 @@ export default function EventForm({
   {/* //desc */}
   <Textarea
     label="Description"
-    rows={6}
+    rows={11}
     value={form.description}
     onChange={(v) => update("description", v)}
     error={errors.description}
@@ -143,8 +151,8 @@ export default function EventForm({
   
   
  {/* Prices box */}
-  <div className="border rounded-lg p-4 mt-4 bg-gray-50">
-    <p className="font-medium mb-2">Ticket Prices</p>
+  <div className="border rounded-lg p-4 bg-gray-50">
+    <p className="mb-2">Ticket Prices</p>
     
     <div className="grid grid-cols-2 gap-4">
       <Field label="A" type="number" value={form.priceA}  onChange={(v) => update("priceA", v)}
