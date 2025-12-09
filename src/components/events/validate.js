@@ -37,6 +37,12 @@ export default function validate(form) {
   } else if (value === 0) {
     e.totalTickets = "Cannot be zero";
   }
+  else if (value > 100) {
+    e.totalTickets = "Cannot be over 100 seats";
+  }
+   else if (value < 20) {
+    e.totalTickets = "Cannot be under 20 seats";
+  }
 }
 
 

@@ -24,9 +24,9 @@ export default function EventForm({
   const { eventId } = useParams();
 
 
-   return (<div className="max-w-4xl">
-       <h2 className=" text-4xl font-bold mb-6">{eventId?"Edit Event":"Create Event"}</h2>
-      <div className="grid grid-cols-3 gap-4">
+   return (<div className="max-w-4xl">  
+       {/* <h2 className=" text-4xl font-bold mb-6">{eventId?"Edit Event":"Create Event"}</h2> */}
+      <div className="grid grid-cols-4 gap-4">
         <Field label="Event Name" value={form.eventName} onChange={v=>update("eventName",v)} error={errors.eventName}/>
         
         {/* type and auto suggest */}
@@ -46,8 +46,21 @@ export default function EventForm({
             </div>
           )}
         </div>
-  
         <Field label="Address" value={form.address} onChange={v=>update("address",v)} error={errors.address} className="mt-3"/>
+   
+   <div>
+   <label className="">Event Image URL</label>
+        <input
+    type="url"
+    value={form.photo}
+    placeholder="https://image.com/img.jpg"
+    onChange={e => update("photo", e.target.value)}
+    className={`w-full p-2 border rounded mt-1 ${errors.photo ? "border-red-500" : ""}`}
+  />
+  {errors.photo && <p className="text-xs text-red-500">{errors.photo}</p>}
+  
+      </div>
+ 
   </div>
     <div className=" grid grid-cols-2 gap-10">
   
@@ -77,7 +90,7 @@ export default function EventForm({
   <div className="mt-4 rounded-lg ">
     {/* <p className="font-medium mb-2">Select Date & Time</p> */}
     <div className=" rounded-xl border shadow mt-4">
-  <p className="font-semibold mb-3">Select Date & Time</p>
+  {/* <p className="font-semibold mb-3">Select Date & Time</p> */}
 
   <Datetime
     value={
@@ -119,18 +132,7 @@ export default function EventForm({
   </div>
 
    {/* Image field */}
-   <div className="mt-6">
-   <label className="">Event Image URL</label>
-        <input
-    type="url"
-    value={form.photo}
-    placeholder="https://image.com/img.jpg"
-    onChange={e => update("photo", e.target.value)}
-    className={`w-full p-2 border rounded mt-1 ${errors.photo ? "border-red-500" : ""}`}
-  />
-  {errors.photo && <p className="text-xs text-red-500">{errors.photo}</p>}
   
-      </div>
       {form.photo && <img src={form.photo} className="w-full mt-2 rounded shadow"/>}
       </div>
   
@@ -149,7 +151,7 @@ export default function EventForm({
   
   
  {/* Prices box */}
-  <div className="border rounded-lg p-4 mt-4 bg-gray-50">
+  <div className="border rounded-lg p-4 bg-gray-50">
     <p className="mb-2">Ticket Prices</p>
     
     <div className="grid grid-cols-2 gap-4">

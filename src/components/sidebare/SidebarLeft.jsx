@@ -2,6 +2,7 @@ import { AiFillHome, AiFillSetting } from "react-icons/ai";
 import { BsChatDotsFill, BsBoxArrowRight } from "react-icons/bs";
 import { FaBars } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
+import LogoutButton from "./LogoutButton";
 
 export default function SidebarLeft() {
     return (
@@ -21,7 +22,7 @@ export default function SidebarLeft() {
             <LeftButton to="settings" icon={<AiFillSetting />} />
 
             <div className="mt-auto mb-2">
-                <LeftButton to="logout" icon={<BsBoxArrowRight />} />
+                <LogoutButton />
             </div>
         </div>
     );
