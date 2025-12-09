@@ -85,6 +85,18 @@ button:focus-visible {
 }
 
 
+/* global input style */
+.input-field {
+  background-color: rgba(245, 242, 242, 0.6);
+  backdrop-filter: blur(4px);                
+  border: 1px solid #d1d5db;                 
+}
+
+.input-field:focus {
+  border-color: #0f9386 !important;                    
+  box-shadow: 0 0 0 1px #0f9386 !important;
+  outline: none !important;
+}
 
 
 

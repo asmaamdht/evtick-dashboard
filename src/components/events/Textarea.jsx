@@ -25,7 +25,12 @@ export default function Textarea({ label, value, onChange, rows, error }) {
         rows={rows}
         value={value}
         onChange={handleChange}
-        className={`w-full border p-2 rounded mt-1 ${error ? "border-red-500" : ""}`}
+        className={`w-full p-2 rounded mt-1 bg-gray-100/60 border
+          ${error 
+            ? "border-red-500 focus:border-red-500" 
+            : "border-gray-300 focus:border-teal-500 "
+          } 
+          outline-none`}
       />
       <div className="flex justify-between mt-1 text-xs">
         {error && <span className="text-red-500">{error}</span>}
