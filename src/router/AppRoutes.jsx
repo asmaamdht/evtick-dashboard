@@ -14,6 +14,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import ResetPassword from "../auth/password/ResetPassword";
 import ForgetPassword from "../auth/password/ForgotPassword";
 import GuestRoute from "../auth/components/GuestRoute";
+import DashboardLayout from "../layouts/DashboardLayout";
 
 
 

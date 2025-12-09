@@ -19,7 +19,8 @@ export default function Layout() {
 
             <div className="relative z-10 flex w-full">
                 <Sidebar />
-                <main className="flex-1 flex flex-col ml-28 peer-hover:ml-[280px] p-6 transition-all duration-400 ease-in-out">
+                <main className="flex-1 flex flex-col ml-28 peer-hover:ml-[280px] p-6 transition-all duration-400 ease-in-out overflow-hidden
+">
                     <Navbar />
                     <Outlet />
                 </main>
