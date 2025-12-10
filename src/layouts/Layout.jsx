@@ -15,7 +15,7 @@ export default function Layout() {
                 "
             /> */}
 
-            <div className="absolute inset-0 bg-black/10" />
+            <div className="absolute inset-0 bg-[#F4F7FA]" />
 
             <div className="relative z-10 flex w-full">
                 <Sidebar />

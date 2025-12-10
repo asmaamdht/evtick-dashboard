@@ -14,21 +14,22 @@ export default function Navbar() {
             </div>
 
             <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 pl-4 border-white/20">
-                    
-                    <div className="text-right hidden md:block">
-                        <p className="text-sm font-medium text-white">
-                            {currentUser?.name || "Guest User"}
-                        </p>
-                        
-                    </div>
+                
 
-                    <div className="w-10 h-10 rounded-[10px] bg-white grid place-items-center overflow-hidden border border-gray-200">
+                    <div className="w-10 h-10 rounded-[10px] bg-white grid place-items-center overflow-hidden ">
                         <img 
                             src={currentUser?.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
                             alt="Profile" 
                             className="w-full h-full object-cover"
                         />
+                    </div>
+                    <div className="flex items-center gap-3  border-white/20">
+                    
+                    <div className="text-right hidden md:block">
+                        <p className="text-sm font-medium text-gray-600">
+                            {currentUser?.fullName || "Guest User"}
+                        </p>
+                        
                     </div>
 
                 </div>
