@@ -24,7 +24,7 @@ export default function EventForm({
   const { eventId } = useParams();
 
 
-   return (<div className="max-w-5xl ">  
+   return (<div className="max-w-6xl ">  
        <h2 className=" text-2xl font-bold mb-6">{eventId?"Edit Event":"Create Event"}</h2>
        <div className="shadow border p-3 bg-white rounded-xl">
       <div className="grid grid-cols-3 gap-4">
