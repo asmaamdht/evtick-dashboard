@@ -17,7 +17,7 @@ export default function SidebarLeftAD() {
             <div className="w-9 h-9 mb-10 flex items-center justify-center  text-white text-xl">
                 <FaBars />
             </div>
-            <LeftButton to="admin" icon={<AiFillHome />} />
+            <LeftButton to="/admin" icon={<AiFillHome />} />
             <LeftButton to="chat" icon={<BsChatDotsFill />} />
             <LeftButton to="users" icon={<AiOutlineUser />} />
 
