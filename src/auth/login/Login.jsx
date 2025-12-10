@@ -56,7 +56,7 @@ export default function Login() {
         fullName: userData.fullName,
         email: userData.email,
         phone: userData.phone,
-        role: userData.role,
+        profilePic: userData.profilePic,
         eventOwner: userData.eventOwner,
       }));
 
@@ -65,7 +65,7 @@ export default function Login() {
       fullName: userData.fullName,
       email: userData.email,
       phone: userData.phone,
-      role: userData.role,
+      profilePic: userData.profilePic,
       eventOwner: userData.eventOwner,
     }));   //(userData)
 

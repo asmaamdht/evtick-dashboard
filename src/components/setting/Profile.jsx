@@ -46,7 +46,7 @@ export default function SettingPage() {
   });
 
   const [formData, setFormData] = useState({
-    name: "",
+    fullName: "",
     email: "",
     phone: "",
     profilePic: "",
@@ -58,7 +58,7 @@ export default function SettingPage() {
   useEffect(() => {
     if (currentUser) {
       setFormData({
-        name: currentUser.name || "",
+        fullName: currentUser.fullName || "",
         email: currentUser.email || "",
         phone: currentUser.phone || "",
         profilePic: currentUser.profilePic || "", 
@@ -80,7 +80,7 @@ export default function SettingPage() {
     try {
       const updatedFields = {};
 
-      if (formData.name !== currentUser.name) updatedFields.name = formData.name;
+      if (formData.fullName !== currentUser.fullName) updatedFields.fullName = formData.fullName;
       if (formData.phone !== currentUser.phone) updatedFields.phone = formData.phone;
       if (formData.profilePic !== currentUser.profilePic) updatedFields.profilePic = formData.profilePic;
 
@@ -127,9 +127,9 @@ export default function SettingPage() {
         await updateDoc(doc(db, "users", currentUser.uid), updatedFields);
         
         // Update Firebase Auth Profile
-        if (updatedFields.profilePic || updatedFields.name) {
+        if (updatedFields.profilePic || updatedFields.fullName) {
             await updateProfile(auth.currentUser, {
-                displayName: updatedFields.name || currentUser.name,
+                displayName: updatedFields.fullName || currentUser.fullName,
                 photoURL: updatedFields.profilePic || currentUser.profilePic
             });
         }
@@ -165,46 +165,41 @@ export default function SettingPage() {
     }
   };
 
-  const handleLogout = () => {
-    Swal.fire({
-      title: 'Are you sure?',
-      text: "You will be logged out!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#0f9386',
-      confirmButtonText: 'Yes, Logout!'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        dispatch(logoutUser());
-      }
-    })
-  };
+  // const handleLogout = () => {
+  //   Swal.fire({
+  //     title: 'Are you sure?',
+  //     text: "You will be logged out!",
+  //     icon: 'warning',
+  //     showCancelButton: true,
+  //     confirmButtonColor: '#d33',
+  //     cancelButtonColor: '#0f9386',
+  //     confirmButtonText: 'Yes, Logout!'
+  //   }).then((result) => {
+  //     if (result.isConfirmed) {
+  //       dispatch(logoutUser());
+  //     }
+  //   })
+  // };
 
   return (
-    <div className="w-full max-w-5xl mx-auto relative">
+    <div className="w-full  mx-auto relative">
       
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className=" justify-between flex-column md:flex items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">Profile Settings</h2>
-          <p className="text-white text-sm">Manage your account info</p>
+          <h2 className="text-2xl font-bold text-black">Profile Settings</h2>
+          <p className="text-gray-600 text-sm">Manage your account info</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 mt-3 md:mt-0">
           {!isEditing && (
             <button 
               onClick={() => setIsEditing(true)}
-              className="bg-[#0f9386] text-white px-5 py-2 rounded-lg hover:bg-[#0b6e64] transition shadow-sm font-medium"
+              className="bg-[#0f9386] text-white px-5 py-2 w-full rounded-lg hover:bg-[#0b6e64] transition shadow-sm font-medium"
             >
               Edit Profile
             </button>
           )}
-          <button 
-            onClick={handleLogout}
-            className="bg-red-50 text-red-600 border border-red-100 px-5 py-2 rounded-lg hover:bg-red-100 transition font-medium"
-          >
-            Logout
-          </button>
+        
         </div>
       </div>
 
@@ -214,11 +209,11 @@ export default function SettingPage() {
         <div className="px-8 pb-8">
           
           {/* Avatar Section */}
-          <div className="relative -mt-12 mb-8 flex flex-col md:flex-row items-end gap-6">
+          <div className="relative -mt-12 mb-8 flex flex-col md:flex-row items-center md:items-end gap-6">
             <div className="relative group">
               <img 
                 src={formData.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
-                className="w-32 h-32 rounded-2xl border-4 border-white bg-white object-cover shadow-md"
+                className="w-32 h-40 rounded-2xl border-4 border-white bg-white object-cover shadow-md"
                 alt="Profile"
               />
               
@@ -234,7 +229,7 @@ export default function SettingPage() {
             </div>
 
             <div className="mb-2">
-              <h1 className="text-3xl font-bold text-gray-900">{formData.name || "User Name"}</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{formData.fullName || "User Name"}</h1>
               <p className="text-gray-500 font-medium">{formData.email}</p>
             </div>
           </div>
@@ -247,9 +242,9 @@ export default function SettingPage() {
                 <label className="text-xs font-bold bg-white text-gray-400 uppercase">Full Name</label>
                 <input
                   type="text"
-                  name="name"
+                  name="fullName"
                   disabled={!isEditing}
-                  value={formData.name}
+                  value={formData.fullName}
                   onChange={handleChange}
                   className={`w-full p-3 rounded-xl bg-white text-gray-700  border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-[#0f9386]' : 'border-gray-100 bg-gray-50 text-gray-600'} transition-all outline-none`}
                 />
@@ -342,7 +337,7 @@ export default function SettingPage() {
                   type="button"
                   onClick={() => {
                     setIsEditing(false);
-                    setFormData(prev => ({...prev, name: currentUser.name, phone: currentUser.phone, profilePic: currentUser.profilePic}));
+                    setFormData(prev => ({...prev, fullName: currentUser.fullName, phone: currentUser.phone, profilePic: currentUser.profilePic}));
                   }}
                   className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
                 >
