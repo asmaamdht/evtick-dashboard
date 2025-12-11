@@ -1,5 +1,5 @@
 
-export default function validate(form) {
+export default function validate(form, categories) {
      let e={};
 //  const [errors, setErrors] = useState({});
 //event name
@@ -10,11 +10,17 @@ export default function validate(form) {
   }
 
   // Type
-  if (!form.type || !form.type.trim()) {
-    e.type = "Required";
-  } else if (!/^[A-Za-z\s]+$/.test(form.type)) {
-    e.type = "Only letters allowed";
-  }
+  if 
+  (!form.type || !form.type.trim()) {
+  e.type = "Required";
+} 
+// else if (!/^[A-Za-z\s]+$/.test(form.type)) {
+//   e.type = "Only letters allowed";
+// } 
+else if (!categories.includes(form.type)) {
+  e.type = "Please choose a category from the list";
+}
+
     
   //address
   if (!form.address || !form.address.trim()) {
