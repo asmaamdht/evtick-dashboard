@@ -6,6 +6,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { useParams } from "react-router-dom";
 import validate from "./validate";
 import EventForm from "./EventForm";
+import { showSuccess } from "../../admin/components/events/SweetAlert";
 
 
 export default function CreateOrEditEvent() {
@@ -16,6 +17,10 @@ export default function CreateOrEditEvent() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   // const [showPicker, setShowPicker] = useState(false);
   const [errors, setErrors] = useState({});
+  const categories = [
+    "Charity","Entertainment","sports","Tech","Marketing",
+    "Educational","Community","Corporate","School & University"
+  ];
 
 
 
@@ -71,12 +76,15 @@ useEffect(() => {
 
   // save in firestore
   const save=async()=>{
-  const errors = validate(form);
+  const errors = validate(form, categories);
   setErrors(errors);
   if (Object.keys(errors).length !== 0) return;
 
     const fullDate=new Date(`${form.date}T${form.time}`);
-    const ref = doc(db,"events",eventId || crypto.randomUUID());
+    // const ref = doc(db,"events",eventId || crypto.randomUUID());
+    const ref = eventId
+    ? doc(db, "events", eventId)
+    : doc(db, "pendingEvents", crypto.randomUUID());
 
     const payload={
       eventName:form.eventName,
@@ -105,7 +113,8 @@ useEffect(() => {
   setForm(initialForm); // reset form after creation
 }
     // eventId ? await updateDoc(ref,payload) : await setDoc(ref,payload);
-    alert(eventId?"Updated Successfully":"Event Created");
+    // alert(eventId?"Updated Successfully":"Admin will review your request");
+    showSuccess(eventId?"Updated Successfully":"Admin will review your request");
   };
 
   
@@ -117,6 +126,7 @@ return (
       save={save}
       showSuggestions={showSuggestions}
       setShowSuggestions={setShowSuggestions}
+      categories={categories}
     />
   );
 }
