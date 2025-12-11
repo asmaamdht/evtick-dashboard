@@ -1,32 +1,30 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchOrganizerPayments } from "../redux/slices/paymentSlice";
-import AttendanceCard from "../components/attendance/AttendanceCard";
+import { fetchAllPayments } from "../../redux/slices/paymentSlice";
+import AttendanceCard from "../../components/attendance/AttendanceCard";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function AttendancePage() {
+export default function AttendancePageAD() {
   const dispatch = useDispatch();
-  const { organizerPayments, loading } = useSelector((state) => state.payment);
+  const { allPayments , loading } = useSelector((state) => state.payment);
 
-  const organizer = useSelector((state) => state.auth.currentUser);
-  const organizerName = organizer?.fullName;
 
   const [filterEvent, setFilterEvent] = useState("");
   const [filterRow, setFilterRow] = useState("");
   const [filterSeat, setFilterSeat] = useState("");
   const [filterDate, setFilterDate] = useState("");
 
-  // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
   const cardsPerPage = 8; 
 
   useEffect(() => {
-    if (organizerName) {
-      dispatch(fetchOrganizerPayments(organizerName));
-    }
-  }, [organizerName, dispatch]);
+    
+      dispatch(fetchAllPayments());
+    
+  }, [dispatch]);
 
-  // Filtering Logic
-  const filteredPayments = organizerPayments?.filter((payment) => {
+
+  const filteredPayments = allPayments  ?.filter((payment) => {
     if (filterEvent && !payment.eventName?.toLowerCase().includes(filterEvent.toLowerCase())) {
       return false;
     }
@@ -51,7 +49,7 @@ export default function AttendancePage() {
     return true;
   });
 
-  // Pagination Logic
+  
   const indexOfLastCard = currentPage * cardsPerPage;
   const indexOfFirstCard = indexOfLastCard - cardsPerPage;
   const currentCards = filteredPayments.slice(indexOfFirstCard, indexOfLastCard);
@@ -160,29 +158,49 @@ export default function AttendancePage() {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-8">
-              <button 
-                onClick={handlePrev}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-slate-200 disabled:opacity-50 rounded-lg"
-              >
-                Prev
-              </button>
+           {totalPages > 1 && (
+           <div className="mt-8 flex items-center justify-center gap-2">
+    
+  
+               <button
+                 onClick={handlePrev}
+                 disabled={currentPage === 1}
+                 className="px-4 py-2 rounded-lg bg-gray-100  text-teal-700 border border-teal-300 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
+               >
+                 <ChevronLeft className="w-5 h-5" />
+                 Previous
+               </button>
 
-              <span className="font-semibold text-slate-700">
-                Page {currentPage} of {totalPages}
-              </span>
+               {/* Page Numbers */}
+               <div className="flex gap-2">
+                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                   <button
+                     key={pageNum}
+                     onClick={() => setCurrentPage(pageNum)}
+                     className={`w-10 h-10 rounded-lg font-semibold transition-all duration-200 ${
+                       currentPage === pageNum
+                         ? 'bg-teal-600 text-white border-2 border-teal-400 shadow-lg scale-110'
+                         : 'bg-white/70 backdrop-blur-sm text-teal-700 border border-teal-300 hover:bg-white'
+                     }`}
+                   >
+                     {pageNum}
+                   </button>
+                 ))}
+               </div>
+           
+               {/* Next Button */}
+               <button
+                 onClick={handleNext}
+                 disabled={currentPage === totalPages}
+                 className="px-4 py-2 rounded-lg bg-gray-100 backdrop-blur-sm text-teal-700 border border-teal-300 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
+               >
+                 Next
+                 <ChevronRight className="w-5 h-5" />
+               </button>
+           
+                      </div>
+                    )}
 
-              <button 
-                onClick={handleNext}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-slate-200 disabled:opacity-50 rounded-lg"
-              >
-                Next
-              </button>
-            </div>
-          )}
         </>
       )}
     </div>

@@ -1,9 +1,9 @@
 import React from "react";
 import { AiOutlineSearch } from "react-icons/ai";
-import SearchInput from "./SearchInput";
+import SearchInput from "./SearchInputAD";
 import { useSelector } from "react-redux"; 
 
-export default function Navbar() {
+export default function NavbarAD() {
     const { currentUser } = useSelector((state) => state.auth);
 
     return (
