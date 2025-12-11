@@ -39,47 +39,58 @@ export default function Login() {
     return valid;
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+const handleLogin = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    try {
-      const cred = await signInWithEmailAndPassword(auth, email, password);
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
 
-      const snap = await getDoc(doc(db, "users", cred.user.uid));
-      if (!snap.exists()) throw new Error("User profile not found!");
+    const snap = await getDoc(doc(db, "users", cred.user.uid));
+    if (!snap.exists()) throw new Error("User profile not found!");
 
-      const userData = snap.data();
+    const userData = snap.data();
 
-      localStorage.setItem("user", JSON.stringify({
-        uid: cred.user.uid,
-        fullName: userData.fullName,
-        email: userData.email,
-        phone: userData.phone,
-        profilePic: userData.profilePic,
-        eventOwner: userData.eventOwner,
+    // ------------- ROLE VALIDATION BEFORE ANYTHING -------------
+    if (!userData.role || !["admin", "organizer"].includes(userData.role)) {
+      setErrors((prev) => ({
+        ...prev,
+        firebase: "You are not authorized to access this system.",
       }));
 
-      dispatch(setUser({
+      // Logout completely
+      await auth.signOut();
+      localStorage.removeItem("user");
+      return;
+    }
+
+    // ------------- SAVE ONLY IF AUTHORIZED -------------
+    const safeUser = {
       uid: cred.user.uid,
       fullName: userData.fullName,
       email: userData.email,
       phone: userData.phone,
       profilePic: userData.profilePic,
       eventOwner: userData.eventOwner,
-    }));   //(userData)
+      role: userData.role,
+    };
 
-      switch (userData.role) {
-        case "admin": navigate("/admin"); break;
-        case "organizer": navigate("/dashboard"); break;
-        default: navigate("*");
-      }
+    localStorage.setItem("user", JSON.stringify(safeUser));
+    dispatch(setUser(safeUser));
 
-    } catch (err) {
-      let msg = err.message.replace("Firebase:", "").trim();
-      setErrors((prev) => ({ ...prev, firebase: msg }));
+    // Redirect based on role
+    if (userData.role === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/dashboard");
     }
-  };
+
+  } catch (err) {
+    let msg = err.message.replace("Firebase:", "").trim();
+    setErrors((prev) => ({ ...prev, firebase: msg }));
+  }
+};
+
 
   return (
     <>
