@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { db } from "../../firebase/firebase.config"; 
+import { db, auth } from "../../firebase/firebase.config"; 
 import { collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { sendPasswordResetEmail } from "firebase/auth"; 
 import Swal from "sweetalert2";
-import { FaEdit, FaTrash, FaSearch, FaChevronLeft, FaChevronRight, FaFilter, FaPhoneAlt, FaUserTag, FaUser } from "react-icons/fa";
+import { FaEdit, FaTrash, FaSearch, FaChevronLeft, FaChevronRight, FaFilter, FaPhoneAlt, FaUserTag, FaUser, FaEnvelope, FaKey } from "react-icons/fa";
 
 export default function UsersPageAD() {
   const [users, setUsers] = useState([]);
@@ -54,7 +55,29 @@ export default function UsersPageAD() {
     }
   };
 
-  // 3. Handlers
+  const handleSendResetPassword = async () => {
+    if (!editingUser?.email) return;
+  
+    try {
+      await sendPasswordResetEmail(auth, editingUser.email);
+      Swal.fire({
+        icon: "success",
+        title: "Email Sent!",
+        text: `A password reset link has been sent to ${editingUser.email}`,
+        confirmButtonColor: "#0f9386",
+      });
+    } catch (error) {
+      console.error(error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to send reset email. (User may not have a valid auth record)",
+        confirmButtonColor: "#d33",
+      });
+    }
+  };
+
+  // Handlers
   const handleEditClick = (user) => {
     setEditingUser(user);
     setPhoneError(""); 
@@ -115,7 +138,7 @@ export default function UsersPageAD() {
     });
   };
 
-  // 4. Filtering & Pagination
+  // Filtering & Pagination
   const filteredUsers = users.filter((user) => {
     if (!["user", "organizer"].includes(user.role)) return false;
     if (roleFilter !== "all" && user.role !== roleFilter) return false;
@@ -159,10 +182,10 @@ export default function UsersPageAD() {
           <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Search by name, email or phone..." 
+            placeholder="Search by name, email or phone.." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-7 pr-4 py-2.5 bg-gray-50 border border-transparent rounded-lg focus:bg-white focus:border-[#0f9386] focus:ring-2 focus:ring-[#0f9386]/20 outline-none transition-all text-sm"
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-transparent rounded-lg focus:bg-white focus:border-[#0f9386] focus:ring-2 focus:ring-[#0f9386]/20 outline-none transition-all text-sm"
           />
         </div>
         
@@ -172,7 +195,7 @@ export default function UsersPageAD() {
             <select 
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="bg-transparent outline-none text-gray-700 text-lg rounded-lg font-medium cursor-pointer w-full"
+                className="bg-transparent outline-none text-gray-700 text-sm font-medium cursor-pointer w-full"
             >
                 <option value="all">All Roles</option>
                 <option value="user">Users</option>
@@ -182,7 +205,7 @@ export default function UsersPageAD() {
         </div>
       </div>
 
-      {/*  Desktop Table View (Hidden on Mobile) */}
+      {/* Desktop Table View */}
       <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead className="bg-teal-600 text-white uppercase text-xx font-semibold">
@@ -199,15 +222,15 @@ export default function UsersPageAD() {
                 <tr key={user.id} className="hover:bg-teal-50/30 transition duration-200">
                   <td className="p-4 pl-6">
                     <div className="flex items-center gap-3">
-                      <img src={user.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} alt="avatar" className="w-11 h-12 rounded-lg object-cover border border-gray-100" />
+                      <img src={user.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} alt="avatar" className="w-12 h-12 rounded-lg object-cover border border-gray-100" />
                       <div>
                         <p className="font-bold text-gray-800 text-md">{user.fullName || "Unknown"}</p>
-                        <p className="text-xs text-gray-400">{user.email}</p>
+                        <p className="text-md text-gray-400">{user.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className={`px-2.5 py-1 rounded-md text-[12px] font-bold uppercase tracking-wide border
+                    <span className={`px-2.5 py-1 rounded-md text-[13px] font-bold uppercase tracking-wide border
                       ${user.role === 'organizer' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-teal-50 text-teal-600 border-teal-100'}`}>
                       {user.role}
                     </span>
@@ -216,7 +239,7 @@ export default function UsersPageAD() {
                   <td className="p-4 text-center">
                     <div className="flex justify-center gap-2">
                       <button onClick={() => handleEditClick(user)} className="p-2 rounded-lg text-teal-500 hover:bg-blue-50 transition"><FaEdit size={16} /></button>
-                      <button onClick={() => handleDelete(user.id)} className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition"><FaTrash size={16} /></button>
+                      <button onClick={() => handleDelete(user.id)} className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition"><FaTrash size={16} /></button>
                     </div>
                   </td>
                 </tr>
@@ -228,7 +251,7 @@ export default function UsersPageAD() {
         </table>
       </div>
 
-      {/*  Mobile Cards View*/}
+      {/* Mobile Cards View */}
       <div className="md:hidden grid grid-cols-1 gap-4">
         {currentUsers.length > 0 ? (
           currentUsers.map((user) => (
@@ -295,6 +318,7 @@ export default function UsersPageAD() {
         </div>
       )}
 
+      {/* Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity">
           <div className="bg-white w-full max-w-sm md:max-w-md rounded-3xl shadow-2xl overflow-hidden animate-scale-in">
@@ -331,7 +355,7 @@ export default function UsersPageAD() {
                         name="role"
                         value={editFormData.role} 
                         onChange={handleInputChange} 
-                        className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:border-[#0f9386] focus:ring-4 focus:ring-[#0f9386]/10 outline-none transition-all font-medium text-gray-700 appearance-none cursor-pointer"
+                        className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#0f9386] focus:ring-4 focus:ring-[#0f9386]/10 outline-none transition-all font-medium text-gray-700 appearance-none cursor-pointer"
                     >
                         <option value="user">User</option>
                         <option value="organizer">Organizer</option>
@@ -362,6 +386,22 @@ export default function UsersPageAD() {
                     <p className="text-[10px] text-gray-400 mt-1 ml-1">* Must be a valid Egyptian number (11 digits)</p>
                 )}
               </div>
+
+              {/* ✅ 4. Password Reset Button */}
+              <div className="pt-2 border-t border-gray-100 mt-4">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1 mb-2">
+                    <FaKey size={10} /> Password Management
+                </label>
+                <button
+                    type="button"
+                    onClick={handleSendResetPassword}
+                    className="w-full py-3 rounded-xl border border-dashed border-[#0f9386] text-[#0f9386] bg-teal-50 hover:bg-teal-100 transition-all font-bold text-sm flex items-center justify-center gap-2"
+                >
+                    <FaEnvelope /> Send Reset Email
+                </button>
+                <p className="text-[10px] text-gray-400 mt-1.5 text-center">* Sends an email to user to reset their password safely.</p>
+              </div>
+
             </div>
 
             <div className="px-8 pb-8 flex justify-end gap-3">
@@ -373,7 +413,7 @@ export default function UsersPageAD() {
               </button>
               <button 
                 onClick={handleSaveEdit} 
-                className="px-8 py-2.5 rounded-xl bg-[#0f9386] text-white font-semibold  hover:bg-[#0b6e64]  transition-all transform active:scale-95"
+                className="px-8 py-2.5 rounded-xl bg-[#0f9386] text-white font-semibold shadow-lg shadow-teal-200 hover:bg-[#0b6e64] hover:shadow-teal-300 transition-all transform active:scale-95"
               >
                 Save Changes
               </button>
