@@ -38,7 +38,7 @@ export default function ChatAD() {
         return () => unsub();
     }, []);
 
-    // 🔥 Listener الصحيح للرسائل — مبني على selectedUser فقط
+
     useEffect(() => {
         if (!selectedUser) return;
 

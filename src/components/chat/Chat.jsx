@@ -24,7 +24,7 @@ export default function UserChat() {
     const { currentUser } = useSelector((state) => state.auth);
     const userId = currentUser?.uid;
 
-    const chatId = userId; // 🔥 شات واحد للـ User فقط
+    const chatId = userId;
 
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
@@ -52,7 +52,6 @@ export default function UserChat() {
     const sendMessage = async () => {
         if (!newMessage.trim() && !file) return;
 
-        // تأكيد وجود Document للـ user
         await setDoc(
             doc(db, "messages", userId),
             {
