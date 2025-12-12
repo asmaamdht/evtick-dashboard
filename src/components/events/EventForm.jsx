@@ -1,4 +1,3 @@
-// EventForm.jsx
 import DatePicker from "react-datepicker";
 //import "react-datepicker/dist/react-datepicker.css";
 import Textarea from "./Textarea";
@@ -15,12 +14,10 @@ export default function EventForm({
   update,
   save,
   showSuggestions,
-  setShowSuggestions
+  setShowSuggestions,
+  categories
 }) {
-  const categories = [
-    "Charity","Entertainment","Sports","Tech","Marketing",
-    "Educational","Community","Corporate","School & University"
-  ];
+  
   const { eventId } = useParams();
 
 
@@ -37,7 +34,7 @@ export default function EventForm({
             onFocus={()=>setShowSuggestions(true)} error={errors.type}
           />
   
-          {showSuggestions && form.type && (
+          {/* {showSuggestions && form.type && (
             <div className="absolute w-full bg-white border shadow-lg z-40 rounded max-h-36 overflow-y-auto"
                  onMouseLeave={()=>setShowSuggestions(false)}>
               {categories.filter(c => c.toLowerCase().startsWith(form.type.toLowerCase())).map((c,i)=>(
@@ -45,7 +42,29 @@ export default function EventForm({
                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer">{c}</p>
               ))}
             </div>
-          )}
+          )} */}
+          {showSuggestions && (
+          <div
+            className="absolute w-full bg-white border shadow-lg z-40 rounded max-h-36 overflow-y-auto"
+            onMouseLeave={() => setShowSuggestions(false)}
+          >
+            {(form.type
+              ? categories.filter(c =>
+                  c.toLowerCase().startsWith(form.type.toLowerCase())
+                )
+              : categories
+            ).map((c, i) => (
+              <p
+                key={i}
+                onMouseDown={() => { update("type", c); setShowSuggestions(false); }}
+                className="px-3 py-2 hover:bg-gray-100 cursor-pointer cursor-pointer"
+              >
+                {c}
+              </p>
+            ))}
+          </div>
+        )}
+
         </div>
   
         <Field label="Address" value={form.address} onChange={v=>update("address",v)} error={errors.address} className="mt-3"/>
