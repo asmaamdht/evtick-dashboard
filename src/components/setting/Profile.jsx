@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { setUser, logoutUser } from "../../auth/authSlice"; 
+import { setUser } from "../../auth/authSlice";
 
 import { auth, db } from "../../firebase/firebase.config";
 import { doc, updateDoc } from "firebase/firestore";
-import { 
-  updatePassword, 
-  EmailAuthProvider, 
+import {
+  updatePassword,
+  EmailAuthProvider,
   reauthenticateWithCredential,
-  updateProfile 
+  updateProfile
 } from "firebase/auth";
 
 import Swal from "sweetalert2";
+import { FaChevronDown, FaChevronUp, FaLock } from "react-icons/fa";
+
 const PREDEFINED_AVATARS = [
   "https://cdn-icons-png.flaticon.com/512/4140/4140048.png",
   "https://cdn-icons-png.flaticon.com/512/4140/4140037.png",
@@ -39,11 +41,15 @@ export default function SettingPage() {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [avatarTab, setAvatarTab] = useState("select");
 
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+
   const [showPass, setShowPass] = useState({
     old: false,
     new: false,
     confirm: false
   });
+
+  const [phoneError, setPhoneError] = useState("");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -61,7 +67,7 @@ export default function SettingPage() {
         fullName: currentUser.fullName || "",
         email: currentUser.email || "",
         phone: currentUser.phone || "",
-        profilePic: currentUser.profilePic || "", 
+        profilePic: currentUser.profilePic || "",
         oldPassword: "",
         password: "",
         confirmPassword: "",
@@ -69,22 +75,54 @@ export default function SettingPage() {
     }
   }, [currentUser]);
 
+  const validateEgyptianPhone = (phone) => {
+    const regex = /^01[0125][0-9]{8}$/;
+    return regex.test(phone);
+  };
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    if (name === "phone") {
+      if (value && !validateEgyptianPhone(value)) {
+        setPhoneError("Invalid phone number (must be 11 digits starting with 010, 011, 012, 015)");
+      } else {
+        setPhoneError("");
+      }
+    }
+  };
+
+  const togglePasswordSection = () => {
+    if (showPasswordSection) {
+      setFormData(prev => ({ ...prev, oldPassword: "", password: "", confirmPassword: "" }));
+    }
+    setShowPasswordSection(!showPasswordSection);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!currentUser?.uid) return Swal.fire( "User not found!", "error");
+    if (!currentUser?.uid) return Swal.fire("User not found!", "error");
+
+    const cleanPhone = formData.phone ? formData.phone.trim() : "";
+
+    if (cleanPhone !== "" && !validateEgyptianPhone(cleanPhone)) {
+      return Swal.fire({
+        icon: 'error',
+        title: 'Invalid Phone Number',
+        text: 'Please enter a valid Egyptian phone number (11 digits starting with 01).',
+        confirmButtonColor: '#d33'
+      });
+    }
 
     try {
       const updatedFields = {};
 
       if (formData.fullName !== currentUser.fullName) updatedFields.fullName = formData.fullName;
-      if (formData.phone !== currentUser.phone) updatedFields.phone = formData.phone;
+      if (cleanPhone !== currentUser.phone) updatedFields.phone = cleanPhone;
       if (formData.profilePic !== currentUser.profilePic) updatedFields.profilePic = formData.profilePic;
 
-      if (formData.password) {
+      if (showPasswordSection && formData.password) {
         if (formData.password !== formData.confirmPassword) {
           return Swal.fire({
             icon: "error",
@@ -105,7 +143,7 @@ export default function SettingPage() {
         const credential = EmailAuthProvider.credential(auth.currentUser.email, formData.oldPassword);
         await reauthenticateWithCredential(auth.currentUser, credential);
         await updatePassword(auth.currentUser, formData.password);
-        
+
         Swal.fire({
           icon: "success",
           title: "Updated!",
@@ -123,22 +161,18 @@ export default function SettingPage() {
           }
         });
 
-        // Update Firestore
         await updateDoc(doc(db, "users", currentUser.uid), updatedFields);
-        
-        // Update Firebase Auth Profile
+
         if (updatedFields.profilePic || updatedFields.fullName) {
-            await updateProfile(auth.currentUser, {
-                displayName: updatedFields.fullName || currentUser.fullName,
-                photoURL: updatedFields.profilePic || currentUser.profilePic
-            });
+          await updateProfile(auth.currentUser, {
+            displayName: updatedFields.fullName || currentUser.fullName,
+            photoURL: updatedFields.profilePic || currentUser.profilePic
+          });
         }
 
-        // Update Redux
         const updatedUserObj = { ...currentUser, ...updatedFields };
         dispatch(setUser(updatedUserObj));
-        
-        // Success Alert
+
         Swal.fire({
           icon: "success",
           title: "Saved!",
@@ -149,13 +183,15 @@ export default function SettingPage() {
       }
 
       setIsEditing(false);
+      setShowPasswordSection(false);
+      setPhoneError("");
       setFormData(prev => ({ ...prev, oldPassword: "", password: "", confirmPassword: "" }));
 
     } catch (error) {
       console.error(error);
       let errorMsg = error.message;
       if (error.code === "auth/wrong-password") errorMsg = "Incorrect Old Password!";
-      
+
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -165,60 +201,41 @@ export default function SettingPage() {
     }
   };
 
-  // const handleLogout = () => {
-  //   Swal.fire({
-  //     title: 'Are you sure?',
-  //     text: "You will be logged out!",
-  //     icon: 'warning',
-  //     showCancelButton: true,
-  //     confirmButtonColor: '#d33',
-  //     cancelButtonColor: '#0f9386',
-  //     confirmButtonText: 'Yes, Logout!'
-  //   }).then((result) => {
-  //     if (result.isConfirmed) {
-  //       dispatch(logoutUser());
-  //     }
-  //   })
-  // };
-
   return (
-    <div className="w-full  mx-auto relative">
-      
-      {/* Header */}
-      <div className=" justify-between flex-column md:flex items-center mb-6">
+    <div className="w-full max-w-5xl mx-auto relative p-4 md:p-6 lg:p-8">
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h2 className="text-2xl font-bold text-black">Profile Settings</h2>
           <p className="text-gray-600 text-sm">Manage your account info</p>
         </div>
-        <div className="flex gap-3 mt-3 md:mt-0">
+        <div className="w-full md:w-auto">
           {!isEditing && (
-            <button 
+            <button
               onClick={() => setIsEditing(true)}
-              className="bg-[#0f9386] text-white px-5 py-2 w-full rounded-lg hover:bg-[#0b6e64] transition shadow-sm font-medium"
+              className="bg-[#0f9386] text-white px-5 py-2 w-full md:w-auto rounded-lg hover:bg-[#0b6e64] transition shadow-sm font-medium"
             >
               Edit Profile
             </button>
           )}
-        
-        </div>
-      </div>
+        </div >
+      </div >
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-visible relative">
-        <div className="h-32 bg-gradient-to-r from-[#0f9386] to-[#085f56] rounded-t-2xl"></div>
-        
-        <div className="px-8 pb-8">
-          
-          {/* Avatar Section */}
-          <div className="relative -mt-12 mb-8 flex flex-col md:flex-row items-center md:items-end gap-6">
+        <div className="h-24 md:h-32 bg-gradient-to-r from-[#0f9386] to-[#085f56] rounded-t-2xl"></div>
+
+        <div className="px-4 md:px-8 pb-8">
+
+          <div className="relative -mt-12 mb-8 flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-6">
             <div className="relative group">
-              <img 
-                src={formData.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
-                className="w-32 h-40 rounded-2xl border-4 border-white bg-white object-cover shadow-md"
+              <img
+                src={formData.profilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
+                className="w-28 h-28 md:w-32 md:h-40 rounded-2xl border-4 border-white bg-white object-cover shadow-md"
                 alt="Profile"
               />
-              
+
               {isEditing && (
-                <button 
+                <button
                   type="button"
                   onClick={() => setShowAvatarModal(true)}
                   className="absolute bottom-2 right-2 bg-gray-900 text-white p-2 rounded-full hover:bg-[#0f9386] transition shadow-lg"
@@ -228,15 +245,14 @@ export default function SettingPage() {
               )}
             </div>
 
-            <div className="mb-2">
-              <h1 className="text-3xl font-bold text-gray-900">{formData.fullName || "User Name"}</h1>
+            <div className="mb-2 text-center md:text-left">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{formData.fullName || "User Name"}</h1>
               <p className="text-gray-500 font-medium">{formData.email}</p>
             </div>
           </div>
 
           <form onSubmit={handleSave}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {/* Full Name */}
               <div className="space-y-1">
                 <label className="text-xs font-bold bg-white text-gray-400 uppercase">Full Name</label>
@@ -250,7 +266,7 @@ export default function SettingPage() {
                 />
               </div>
 
-              {/* Phone */}
+              {/* Phone with Validation */}
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-400 uppercase">Phone Number</label>
                 <input
@@ -259,8 +275,16 @@ export default function SettingPage() {
                   disabled={!isEditing}
                   value={formData.phone}
                   onChange={handleChange}
-                  className={`w-full p-3 rounded-xl bg-white text-gray-700 border ${isEditing ? 'border-gray-300 focus:ring-2 focus:ring-[#0f9386]' : 'border-gray-100 bg-gray-50 text-gray-600'} transition-all outline-none`}
+                  placeholder="01xxxxxxxxx"
+                  className={`w-full p-3 rounded-xl bg-white text-gray-700 border transition-all outline-none
+                    ${phoneError ? 'border-red-500 focus:ring-2 focus:ring-red-200' : (isEditing ? 'border-gray-300 focus:ring-2 focus:ring-[#0f9386]' : 'border-gray-100 bg-gray-50 text-gray-600')}
+                  `}
                 />
+                {isEditing && phoneError ? (
+                  <p className="text-xs text-red-500 mt-1 font-bold animate-pulse">{phoneError}</p>
+                ) : (
+                  isEditing && <p className="text-[10px] text-gray-400 mt-1 ml-1">* Must be a valid Egyptian number (11 digits)</p>
+                )}
               </div>
 
               {/* Email  */}
@@ -274,98 +298,117 @@ export default function SettingPage() {
                 />
               </div>
 
-              {/* Password Section */}
+              {/* Security Section (Accordion) */}
               {isEditing && (
-                <div className="md:col-span-2 mt-6 p-6 bg-gray-50 rounded-xl border border-gray-200">
-                  <h3 className="text-sm font-bold text-gray-800 mb-4 border-b pb-2">Security</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     
-                     {/* New Password */}
-                     <div className="relative">
-                      <label className="text-xs font-semibold  text-gray-500">New Password</label>
-                      <input 
-                        type={showPass.new ? "text" : "password"} 
-                        name="password" 
-                        value={formData.password} 
-                        onChange={handleChange} 
-                        className="w-full mt-1 p-2 rounded-lg bg-white text-gray-700 border border-gray-300 focus:border-[#0f9386] outline-none bg-white pr-10" 
-                      />
-                      <button type="button" onClick={() => setShowPass({...showPass, new: !showPass.new})} className="absolute right-3 top-8">
-                        {showPass.new ? <EyeSlashIcon /> : <EyeIcon />}
-                      </button>
-                    </div>
+                <div className="md:col-span-2 mt-4">
+                  {/* Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={togglePasswordSection}
+                    className="flex items-center gap-2 text-sm font-bold text-[#0f9386] hover:text-[#0b6e64] transition-all bg-teal-50 px-4 py-2 rounded-lg border border-teal-100 w-full md:w-auto justify-center md:justify-start"
+                  >
+                    <FaLock />
+                    {showPasswordSection ? "Cancel Password Change" : "Change Password"}
+                    {showPasswordSection ? <FaChevronUp /> : <FaChevronDown />}
+                  </button>
 
-                    {/* Confirm Password */}
-                    <div className="relative">
-                      <label className="text-xs font-semibold text-gray-500">Confirm Password</label>
-                      <input 
-                        type={showPass.confirm ? "text" : "password"} 
-                        name="confirmPassword" 
-                        value={formData.confirmPassword} 
-                        onChange={handleChange} 
-                        className="w-full mt-1 p-2 rounded-lg bg-white text-gray-700 border border-gray-300 focus:border-[#0f9386] outline-none bg-white pr-10" 
-                      />
-                      <button type="button" onClick={() => setShowPass({...showPass, confirm: !showPass.confirm})} className="absolute right-3 top-8">
-                        {showPass.confirm ? <EyeSlashIcon /> : <EyeIcon />}
-                      </button>
-                    </div>
+                  {/* Hidden Section */}
+                  {showPasswordSection && (
+                    <div className="mt-4 p-4 md:p-6 bg-gray-50 rounded-xl border border-gray-200 animate-fade-in-down">
+                      <h3 className="text-sm font-bold text-gray-800 mb-4 border-b pb-2">Security Settings</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                    {/* Old Password */}
-                    <div className="md:col-span-2 relative">
-                      <label className="text-xs font-bold text-red-500">Old Password (Required to save changes)</label>
-                      <input 
-                        type={showPass.old ? "text" : "password"} 
-                        name="oldPassword" 
-                        value={formData.oldPassword} 
-                        onChange={handleChange} 
-                        className="w-full mt-1 p-2 rounded-lg bg-white text-gray-700 border border-red-200 focus:border-red-500 bg-white outline-none pr-10" 
-                        placeholder="Enter current password..." 
-                      />
-                      <button type="button" onClick={() => setShowPass({...showPass, old: !showPass.old})} className="absolute right-3 top-8">
-                        {showPass.old ? <EyeSlashIcon /> : <EyeIcon />}
-                      </button>
-                    </div>
+                        {/* New Password */}
+                        <div className="relative">
+                          <label className="text-xs font-semibold text-gray-500">New Password</label>
+                          <input
+                            type={showPass.new ? "text" : "password"}
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            className="w-full mt-1 p-2 rounded-lg bg-white text-gray-700 border border-gray-300 focus:border-[#0f9386] outline-none bg-white pr-10"
+                          />
+                          <button type="button" onClick={() => setShowPass({ ...showPass, new: !showPass.new })} className="absolute right-3 top-8">
+                            {showPass.new ? <EyeSlashIcon /> : <EyeIcon />}
+                          </button>
+                        </div>
 
-                  </div>
+                        {/* Confirm Password */}
+                        <div className="relative">
+                          <label className="text-xs font-semibold text-gray-500">Confirm Password</label>
+                          <input
+                            type={showPass.confirm ? "text" : "password"}
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            className="w-full mt-1 p-2 rounded-lg bg-white text-gray-700 border border-gray-300 focus:border-[#0f9386] outline-none bg-white pr-10"
+                          />
+                          <button type="button" onClick={() => setShowPass({ ...showPass, confirm: !showPass.confirm })} className="absolute right-3 top-8">
+                            {showPass.confirm ? <EyeSlashIcon /> : <EyeIcon />}
+                          </button>
+                        </div>
+
+                        {/* Old Password */}
+                        <div className="md:col-span-2 relative">
+                          <label className="text-xs font-bold text-red-500">Old Password (Required)</label>
+                          <input
+                            type={showPass.old ? "text" : "password"}
+                            name="oldPassword"
+                            value={formData.oldPassword}
+                            onChange={handleChange}
+                            className="w-full mt-1 p-2 rounded-lg bg-white text-gray-700 border border-red-200 focus:border-red-500 bg-white outline-none pr-10"
+                            placeholder="Enter current password..."
+                          />
+                          <button type="button" onClick={() => setShowPass({ ...showPass, old: !showPass.old })} className="absolute right-3 top-8">
+                            {showPass.old ? <EyeSlashIcon /> : <EyeIcon />}
+                          </button>
+                        </div>
+
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            {isEditing && (
-              <div className="mt-8 flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setFormData(prev => ({...prev, fullName: currentUser.fullName, phone: currentUser.phone, profilePic: currentUser.profilePic}));
-                  }}
-                  className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 rounded-lg bg-[#0f9386] text-white hover:bg-[#0b6e64] shadow-md font-medium"
-                >
-                  Save Changes
-                </button>
-              </div>
-            )}
+            {
+              isEditing && (
+                <div className="mt-8 flex gap-3 justify-end border-t pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setShowPasswordSection(false);
+                      setPhoneError("");
+                      setFormData(prev => ({ ...prev, fullName: currentUser.fullName, phone: currentUser.phone, profilePic: currentUser.profilePic }));
+                    }}
+                    className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2 rounded-lg bg-[#0f9386] text-white hover:bg-[#0b6e64] shadow-md font-medium"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              )}
           </form>
-        </div>
-      </div>
+        </div >
+      </div >
 
-      {/* Avatar Modal */}
+      {/* ✅ 4. Avatar Modal Responsive Width */}
       {showAvatarModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+          <div className="bg-white w-full max-w-sm md:max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
             <div className="bg-[#0f9386] p-4 flex justify-between items-center text-white">
               <h3 className="font-bold text-lg">Choose Avatar</h3>
               <button onClick={() => setShowAvatarModal(false)} className="hover:bg-white/20 p-1 rounded-full">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
-            
+
             <div className="p-4">
               <div className="flex gap-2 mb-4 p-1 bg-gray-100 rounded-lg">
                 <button onClick={() => setAvatarTab("select")} className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-all ${avatarTab === "select" ? "bg-white shadow text-[#0f9386]" : "text-gray-500 hover:text-gray-700"}`}>Select Avatar</button>
@@ -375,9 +418,9 @@ export default function SettingPage() {
                 {avatarTab === "select" ? (
                   <div className="grid grid-cols-4 gap-4">
                     {PREDEFINED_AVATARS.map((av, idx) => (
-                      <button 
-                        key={idx} 
-                        onClick={() => { setFormData({...formData, profilePic: av}); setShowAvatarModal(false); }}
+                      <button
+                        key={idx}
+                        onClick={() => { setFormData({ ...formData, profilePic: av }); setShowAvatarModal(false); }}
                         className={`border-2 rounded-xl p-1 hover:border-[#0f9386] hover:bg-teal-50 transition ${formData.profilePic === av ? 'border-[#0f9386] bg-teal-50' : 'border-transparent'}`}
                       >
                         <img src={av} alt="avatar" className="w-full h-full object-contain" />
@@ -387,11 +430,11 @@ export default function SettingPage() {
                 ) : (
                   <div className="flex flex-col gap-4 mt-6">
                     <label className="text-sm text-gray-600 font-medium">Paste Image URL</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="https://example.com/image.png"
                       className="w-full p-3 border border-gray-300 rounded-lg focus:border-[#0f9386] outline-none"
-                      onChange={(e) => setFormData({...formData, profilePic: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, profilePic: e.target.value })}
                     />
                     <button onClick={() => setShowAvatarModal(false)} className="mt-2 bg-[#0f9386] text-white py-2 rounded-lg">Confirm URL</button>
                   </div>

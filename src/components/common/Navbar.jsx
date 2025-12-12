@@ -29,6 +29,7 @@ export default function Navbar() {
 
             <div className="flex items-center gap-4">
 
+
                 <div className="text-right hidden md:block">
                     <p className="text-sm font-medium text-gray-600">
                         {userNameCapi(currentUser?.fullName || "Guest User")}

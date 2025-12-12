@@ -64,6 +64,7 @@ export const fetchOrganizerPayments = createAsyncThunk(
 const paymentSlice = createSlice({
   name: "payment",
   initialState: {
+    allPayments: [],
     organizerPayments: [],
     loading: false,
     error: null,
@@ -78,7 +79,7 @@ const paymentSlice = createSlice({
       })
       .addCase(fetchAllPayments.fulfilled, (state, action) => {
         state.loading = false;
-        state.organizerPayments = action.payload;
+        state.allPayments = action.payload;
       })
       .addCase(fetchAllPayments.rejected, (state, action) => {
         state.loading = false;

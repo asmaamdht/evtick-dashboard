@@ -51,28 +51,38 @@ export default function Login() {
 
       const userData = snap.data();
 
-      localStorage.setItem("user", JSON.stringify({
+      // role validation
+      if (!userData.role || !["admin", "organizer"].includes(userData.role)) {
+        setErrors((prev) => ({
+          ...prev,
+          firebase: "You are not authorized to access this system.",
+        }));
+
+        // Logout
+        await auth.signOut();
+        localStorage.removeItem("user");
+        return;
+      }
+
+
+      const safeUser = {
         uid: cred.user.uid,
         fullName: userData.fullName,
         email: userData.email,
         phone: userData.phone,
         profilePic: userData.profilePic,
         eventOwner: userData.eventOwner,
-      }));
+        role: userData.role,
+      };
 
-      dispatch(setUser({
-      uid: cred.user.uid,
-      fullName: userData.fullName,
-      email: userData.email,
-      phone: userData.phone,
-      profilePic: userData.profilePic,
-      eventOwner: userData.eventOwner,
-    }));   //(userData)
+      localStorage.setItem("user", JSON.stringify(safeUser));
+      dispatch(setUser(safeUser));
 
-      switch (userData.role) {
-        case "admin": navigate("/admin"); break;
-        case "organizer": navigate("/dashboard"); break;
-        default: navigate("*");
+      // Redirect based on role
+      if (userData.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
       }
 
     } catch (err) {
@@ -81,10 +91,11 @@ export default function Login() {
     }
   };
 
+
   return (
     <>
       <div className="relative w-full">
-        <img 
+        <img
           src="/ticket.png"
           alt="ticket"
           className="absolute -top-8 left-1/2 -translate-x-1/2 w-24"
@@ -97,7 +108,7 @@ export default function Login() {
 
       <form onSubmit={handleLogin} className="space-y-4">
 
-        {/* EMAIL */}
+        {/* email */}
         <div>
           <input
             type="email"
@@ -111,7 +122,7 @@ export default function Login() {
           )}
         </div>
 
-        {/* PASSWORD */}
+        {/* pass*/}
         <div className="relative">
           <input
             type={show ? "text" : "password"}
@@ -133,16 +144,18 @@ export default function Login() {
           )}
         </div>
 
-        {errors.firebase && (
-          <p className="text-red-400 text-sm text-center">{errors.firebase}</p>
-        )}
+        {
+          errors.firebase && (
+            <p className="text-red-400 text-sm text-center">{errors.firebase}</p>
+          )
+        }
 
-        {/* FORGOT PASSWORD */}
+        {/* forgot pass */}
         <p className="text-sm font-medium mt-2 text-right text-[#0f9386]">
           <Link to="/forgot-password">Forgot Password?</Link>
         </p>
 
-        {/* SUBMIT BUTTON */}
+        {/* submit btn*/}
         <button
           type="submit"
           className="w-full py-3 bg-[#0f9386] text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition"
@@ -150,9 +163,9 @@ export default function Login() {
           Sign in
         </button>
 
-      </form>
+      </form >
 
-      
+
     </>
   );
 }

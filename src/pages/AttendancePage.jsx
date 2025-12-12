@@ -8,7 +8,7 @@ export default function AttendancePage() {
   const { organizerPayments, loading } = useSelector((state) => state.payment);
 
   const organizer = useSelector((state) => state.auth.currentUser);
-  const organizerUid = organizer?.uid;
+  const organizerName = organizer?.fullName;
 
   const [filterEvent, setFilterEvent] = useState("");
   const [filterRow, setFilterRow] = useState("");
@@ -17,14 +17,17 @@ export default function AttendancePage() {
 
   // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
+
+
   const cardsPerPage = 8;
 
   useEffect(() => {
-    if (organizerUid) {
-      dispatch(fetchOrganizerPayments(organizerUid));
+    if (organizerName) {
+      dispatch(fetchOrganizerPayments(organizerName));
     }
-  }, [organizerUid, dispatch]);
+  }, [organizerName, dispatch]);
 
+  // Filtering Logic
   const filteredPayments = organizerPayments?.filter((payment) => {
     if (filterEvent && !payment.eventName?.toLowerCase().includes(filterEvent.toLowerCase())) {
       return false;
@@ -180,10 +183,11 @@ export default function AttendancePage() {
               >
                 Next
               </button>
-            </div>
-          )}
+            </div >
+          )
+          }
         </>
       )}
-    </div>
+    </div >
   );
 }

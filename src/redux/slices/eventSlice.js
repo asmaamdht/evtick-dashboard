@@ -33,19 +33,6 @@ export const fetchEventsByType = createAsyncThunk(
   }
 );
 
-// --- Fetch events by Organizer ---
-export const fetchEventsByOrganizer = createAsyncThunk(
-  "events/fetchEventsByOrganizer",
-  async (organizerUid, { dispatch }) => {
-    if (!organizerUid) {
-      return dispatch(fetchAllEvents()).unwrap();
-    }
-    const q = query(collection(db, "events"), where("organizerUid", "==", organizerUid));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  }
-);
-
 // --- Fetch single event by ID ---
 export const fetchEventById = createAsyncThunk(
   "events/fetchEventById",
@@ -130,7 +117,6 @@ export const fetchUserTickets = createAsyncThunk(
         console.warn(' No bookedSeats or not an array for event:', doc.id);
         return;
       }
-
       // Filter booked seats for this user
       const userSeats = eventData.bookedSeats.filter(seat => {
         console.log('Checking seat:', seat, 'userId:', seat?.userId, 'matches:', seat?.userId === userId);
@@ -149,7 +135,6 @@ export const fetchUserTickets = createAsyncThunk(
         });
       });
     });
-
     console.log('Total user tickets:', userTickets.length);
     return userTickets;
   }
@@ -213,20 +198,6 @@ const eventSlice = createSlice({
         state.events = action.payload;
       })
       .addCase(fetchEventsByType.rejected, (state, action) => {
-        state.loadingEvents = false;
-        state.errorEvents = action.error.message;
-      })
-
-      // --- Events by Organizer ---
-      .addCase(fetchEventsByOrganizer.pending, (state) => {
-        state.loadingEvents = true;
-        state.errorEvents = null;
-      })
-      .addCase(fetchEventsByOrganizer.fulfilled, (state, action) => {
-        state.loadingEvents = false;
-        state.events = action.payload;
-      })
-      .addCase(fetchEventsByOrganizer.rejected, (state, action) => {
         state.loadingEvents = false;
         state.errorEvents = action.error.message;
       })

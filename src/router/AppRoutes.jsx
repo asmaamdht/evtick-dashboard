@@ -24,6 +24,7 @@ import EventRequestsPageAD from "../admin/pages/EventRequestsPageAD";
 import ManageEventPageAD from "../admin/pages/ManageEventPageAD";
 import UsersPageAD from "../admin/pages/UsersPageAD";
 import AdminLayout from "../admin/Layout/AdminLayout";
+import ProfileAD from "../admin/components/setting/ProfileAD";
 
 export default function AppRoutes() {
   return (
@@ -95,6 +96,7 @@ export default function AppRoutes() {
         <Route path="event-requests" element={<EventRequestsPageAD />} />
         <Route path="manage-events" element={<ManageEventPageAD />} />
         <Route path="users" element={<UsersPageAD />} />
+        <Route path="profile" element={<ProfileAD />} />
       </Route>
 
     </Routes>
