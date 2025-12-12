@@ -12,9 +12,16 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
     );
   }
 
+  //no user, login
   if (!currentUser) return <Navigate to="/" replace />;
 
+  // check role
   if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
+    
+  
+    if (role === "admin") return <Navigate to="/admin" replace />;
+    if (role === "organizer") return <Navigate to="/dashboard" replace />;
+
     return <Navigate to="/" replace />;
   }
 
