@@ -1,18 +1,43 @@
 import React from "react";
-import CustomEvents from "../components/dashboard/CustomEvents";
-import AnalyticsCards from "../components/dashboard/AnalyticsCards";
+import AnalyticsCards from "../components/dashboard/analyticsCards/AnalyticsCards";
+import DailyEvents from "../components/dashboard/DailyEvents/DailyEvents";
+import EventsSeatMap from "../components/dashboard/eventsSeatMap/EventsSeatMap";
 
 
+
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  getOrganizerEvents,
+  getTotalRevenue,
+  getTicketsSold,
+  getActiveAttendance
+} from "../redux/slices/analyticsCardSlice/analyticsCardThunks";
 
 function DashboardPage() {
-  return (
-    <div className="flex justify-between">
+  const dispatch = useDispatch();
+  const { currentUser } = useSelector((state) => state.auth);
+  const user = currentUser || JSON.parse(localStorage.getItem("user"));
 
-      <div>
+  useEffect(() => {
+    if (user?.uid) {
+      dispatch(getOrganizerEvents(user.uid));
+      dispatch(getTotalRevenue(user.uid));
+      dispatch(getTicketsSold(user.uid));
+      dispatch(getActiveAttendance(user.uid));
+    }
+  }, [dispatch, user]);
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex-1 flex flex-col gap-6">
         <AnalyticsCards />
+        <DailyEvents />
       </div>
 
-      <CustomEvents />
+      <div className="flex-1 flex flex-col gap-6">
+        <EventsSeatMap />
+      </div>
     </div>
   );
 }

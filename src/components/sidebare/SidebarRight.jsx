@@ -15,7 +15,7 @@ export default function SidebarRight() {
             className="
         absolute top-0 bottom-0 left-16 w-[180px] bg-[#353839]
         -translate-x-full group-hover:translate-x-0
-        transition-all duration-400 ease-in-out py-6 flex flex-col
+        transition-all duration-200 ease-in-out py-6 hidden lg:flex flex-col
         rounded-[18px] group-hover:rounded-l-none
     "
         >

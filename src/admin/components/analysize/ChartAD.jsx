@@ -1,9 +1,9 @@
 import React from 'react'
 
-function Chart() {
+function ChartAD() {
     return (
         <div>Chart</div>
     )
 }
 
-export default Chart
+export default ChartAD
