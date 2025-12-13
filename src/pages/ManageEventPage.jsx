@@ -189,7 +189,7 @@ export default function ManageEvents() {
       {/* SEARCH & TYPE FILTER */}
       <div className="flex flex-wrap gap-4 mb-6 items-center">
         <div className="flex items-center gap-2 bg-white border rounded-xl px-3 py-2 w-full md:w-72">
-          <Search size={18} />
+          <Search size={18} className="text-teal-600" />
           <input
             placeholder="Search by name"
             className="outline-none w-full"
