@@ -17,11 +17,11 @@ export default function ContactCardAD({
 
   return (
     <div
-      className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg border overflow-hidden flex flex-col transition-all hover:shadow-xl group relative ${!msg.isRead ? 'border-indigo-200 dark:border-indigo-700 ring-1 ring-indigo-50 dark:ring-indigo-900' : 'border-gray-100 dark:border-gray-700'}`}
+      className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg border overflow-hidden flex flex-col transition-all hover:shadow-xl group relative ${!msg.adminReply ? 'border-indigo-200 dark:border-indigo-700 ring-1 ring-indigo-50 dark:ring-indigo-900' : 'border-gray-100 dark:border-gray-700'}`}
       style={{ height: "450px" }}
     >
       {/* Unread Indicator Badge (Overlay on whole card or specific area) */}
-      {!msg.isRead && (
+      {!msg.adminReply && (
         <div className="absolute top-4 right-4 z-10 animate-pulse">
           <span className="flex h-3 w-3 relative">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
