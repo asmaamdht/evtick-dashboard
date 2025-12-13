@@ -11,6 +11,7 @@ import { Pencil, Trash2, Play, Search } from "lucide-react";
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
 import { FaMapMarkerAlt, FaCalendarAlt, FaTicketAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { FaUser } from "react-icons/fa";
 
 const EVENT_TYPES = [
   "Sports",
@@ -203,14 +204,29 @@ export default function ManageEvents() {
 
       {/* FILTERS */}
       <div className="flex flex-wrap gap-4 mb-6 items-center">
-        <div className="flex items-center gap-2 bg-white border rounded-xl px-3 py-2 w-full md:w-72">
-          <Search size={18} />
-          <input
-            placeholder="Search by name"
-            className="outline-none w-full"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex flex-wrap gap-4 mb-6 items-center">
+          <div className="flex flex-col gap-1 flex-1 min-w-[200px] md:max-w-xs">
+            <label className="text-sm font-medium text-slate-600">
+              Event Name
+            </label>
+
+            <div className="relative">
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-teal-600"
+              />
+
+              <input
+                type="text"
+                placeholder="Search event..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 bg-[#F4F7FA]
+                   focus:outline-none focus:border-[#0f9386]
+                   focus:ring-1 focus:ring-[#0f9386]"
+              />
+            </div>
+          </div>
         </div>
 
         <select
@@ -271,6 +287,9 @@ export default function ManageEvents() {
               </div>
               <div className="text-gray-500 text-sm flex items-center gap-2 mb-2">
                 <FaTicketAlt /> {event.type}
+              </div>
+              <div className="text-gray-500 text-sm flex items-center gap-2 mb-2">
+                <FaUser /> {event.eventOwner || "Unknown"}
               </div>
 
               <div className="flex flex-wrap gap-2 mt-2">
