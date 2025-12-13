@@ -19,6 +19,7 @@
     "@stream-io/video-react-sdk": "^1.28.1",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
+    "emoji-picker-react": "^4.16.1",
     "firebase": "^12.6.0",
     "lucide-react": "^0.556.0",
     "moment": "^2.30.1",
