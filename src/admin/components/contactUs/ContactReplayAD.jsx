@@ -45,7 +45,7 @@ export default function ContactReplayAD({
         </div>
       ) : (
         // Default Mode: Reply Button
-        !msg.reply ? (
+        !msg.adminReply ? (
           <div className="w-full flex justify-end gap-3">
             <button
               onClick={() => handleReplyClick(msg.id)}

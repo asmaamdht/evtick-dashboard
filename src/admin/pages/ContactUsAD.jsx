@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { db } from "../../firebase/firebase.config"; // Adjusted path
 import { collection, onSnapshot, doc, updateDoc, query, orderBy } from "firebase/firestore";
 import ContactCardAD from "../components/contactUs/ContactCardAD";
-import { MessageCircle, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { MessageCircle, Filter } from "lucide-react";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import Swal from "sweetalert2";
 
 export default function ContactUsAD() {
@@ -15,7 +16,7 @@ export default function ContactUsAD() {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
+  const itemsPerPage = 8;
 
   useEffect(() => {
     // Updated collection name "contactMessages" and sorting by "createdAt"
@@ -46,7 +47,7 @@ export default function ContactUsAD() {
     } else if (filterStatus === "replied") {
       result = messages.filter(msg => msg.status === "replied");
     } else if (filterStatus === "pending") {
-      result = messages.filter(msg => !msg.reply);
+      result = messages.filter(msg => !msg.adminReply);
     }
     setFilteredMessages(result);
     setCurrentPage(1); // Reset to first page when filter changes
@@ -94,10 +95,10 @@ export default function ContactUsAD() {
     try {
       const msgRef = doc(db, "contactMessages", msgId);
       await updateDoc(msgRef, {
-        reply: replyText,
+        adminReply: replyText,
         replyTimestamp: new Date().toISOString(),
         status: "replied",
-        isRead: true // Auto-mark as read when replying
+        isRead: false // Set to false so it shows as unread for the user
       });
 
       // Success message removed as per user request
@@ -183,33 +184,38 @@ export default function ContactUsAD() {
             ))}
           </div>
 
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center mt-10 gap-2">
+          {/* Pagination */}
+          {filteredMessages.length > itemsPerPage && (
+            <div className="flex justify-center items-center mt-8 gap-3">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`p-2 rounded-lg border flex items-center justify-center transition-colors ${currentPage === 1
-                  ? 'border-gray-200 text-gray-300 dark:border-gray-700 dark:text-gray-600 cursor-not-allowed'
-                  : 'border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800'
-                  }`}
+                className="p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-[#0f9386] disabled:opacity-50 disabled:hover:bg-white transition-all shadow-sm"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <FaChevronLeft size={14} />
               </button>
 
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400 px-2">
-                Page {currentPage} of {totalPages}
-              </span>
+              <div className="flex gap-2">
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => handlePageChange(i + 1)}
+                    className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-bold transition-all shadow-sm
+                      ${currentPage === i + 1
+                        ? 'bg-[#0f9386] text-white shadow-md shadow-teal-200'
+                        : 'bg-white text-gray-600 border border-gray-200 hover:border-[#0f9386] hover:text-[#0f9386]'}`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
 
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className={`p-2 rounded-lg border flex items-center justify-center transition-colors ${currentPage === totalPages
-                  ? 'border-gray-200 text-gray-300 dark:border-gray-700 dark:text-gray-600 cursor-not-allowed'
-                  : 'border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800'
-                  }`}
+                className="p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-[#0f9386] disabled:opacity-50 disabled:hover:bg-white transition-all shadow-sm"
               >
-                <ChevronRight className="w-5 h-5" />
+                <FaChevronRight size={14} />
               </button>
             </div>
           )}
