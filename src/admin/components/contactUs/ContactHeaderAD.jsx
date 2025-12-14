@@ -18,7 +18,7 @@ export default function ContactHeaderAD({ msg, handleMarkAsRead }) {
                 )}
             </div>
             <div className="flex-1 min-w-0 pr-6"> {/* Padding right for badge space */}
-                <h3 className={`text-base truncate ${!msg.isRead ? 'font-bold text-gray-900 dark:text-white' : 'font-semibold text-gray-700 dark:text-gray-200'}`}>
+                <h3 className={`text-base truncate ${!msg.adminReply ? 'font-bold text-gray-900 dark:text-white' : 'font-semibold text-gray-700 dark:text-gray-200'}`}>
                     {msg.fullName || msg.name || "Anonymous User"}
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -26,16 +26,7 @@ export default function ContactHeaderAD({ msg, handleMarkAsRead }) {
                 </p>
             </div>
 
-            {/* Manual Mark as Read Button (only if unread) */}
-            {!msg.isRead && (
-                <button
-                    onClick={(e) => handleMarkAsRead(msg.id, e)}
-                    className="p-1.5 text-gray-400 hover:text-[#0f9386] hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded-full transition-colors"
-                    title="Mark as Read"
-                >
-                    <Check className="w-4 h-4" />
-                </button>
-            )}
+
         </div>
     );
 }
