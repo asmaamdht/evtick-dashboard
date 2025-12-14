@@ -11,6 +11,8 @@ import EventRequestModal from "../components/events/EventRequestModal";
 import Filters from "../components/events/Filters";
 import { showSuccess } from "../components/events/SweetAlert";
 import { showWarning } from "../components/events/SweetAlert";
+import { FaMapMarkerAlt, FaCalendarAlt, FaTicketAlt } from "react-icons/fa";
+import { FaUser } from "react-icons/fa";
 
 export default function EventRequestsPageAD() {
   const [pendingEvents, setPendingEvents] = useState([]);
@@ -142,11 +144,11 @@ export default function EventRequestsPageAD() {
   return (
     <div>
       {/* <div className="flex flex-col lg:flex-row md:items-center md:justify-between gap-4 mb-6"> */}
-         <div className="flex flex-col md:items-start md:justify-start gap-4 mb-6">
+         <div className="flex flex-col p-6 md:items-start md:justify-start gap-4 mb-6">
 
-        <h1 className="text-2xl font-bold">Pending Event Requests</h1>
+        <h1 className="text-3xl font-bold">Pending Event Requests</h1>
 
-  <div className="w-full flex md:justify-end">
+  <div className="w-full flex md:justify-start mt-5">
       <Filters
     search={search}
     setSearch={setSearch}
@@ -168,24 +170,42 @@ export default function EventRequestsPageAD() {
       )}
 
       {/*grid*/}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 px-6 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {filtered.map(ev => (
           <div
             key={ev.id}
             onClick={() => setSelected(ev)}
-            className="cursor-pointer relative bg-white rounded-xl overflow-hidden shadow hover:shadow-xl transition"
+            className="cursor-pointer relative bg-white rounded-xl overflow-hidden shadow hover:shadow-xl transition group"
           >
-            <div className="h-44 w-full overflow-hidden">
-              <img src={ev.photo} className="w-full h-full object-cover" />
+            <div className="h-80 w-full overflow-hidden">
+              <img src={ev.photo} className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110" />
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/50 text-white">
-              <h2 className="text-lg font-bold">{ev.eventName}</h2>
-              <p className="text-sm opacity-90">{ev.type}</p>
-              <p className="text-xs opacity-80">
-                Organizer: <span className="font-semibold">{ev.eventOwner}</span>
-              </p>
-            </div>
+           <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/50 text-white">
+          <h2 className="text-lg font-bold mb-2">{ev.eventName}</h2>
+
+          <p className="text-xs opacity-80 flex items-center gap-1 mb-1">
+            <FaCalendarAlt className="text-xs" />
+            {ev.date.toDate().toLocaleDateString()}
+          </p>
+
+        <p className="text-xs opacity-80 flex items-center gap-1 mb-1">
+            <FaMapMarkerAlt className="text-xs" />
+            {ev.address}
+          </p>
+
+          <p className="text-sm opacity-90 flex items-center gap-1 mb-1">
+            <FaTicketAlt className="text-xs" />
+            {ev.type}
+          </p>
+
+          <p className="text-xs opacity-80 flex items-center gap-1 mb-1">
+            <FaUser className="text-xs" />
+            <span className="font-semibold">{ev.eventOwner}</span>
+          </p>
+
+        </div>
+
           </div>
         ))}
       </div>

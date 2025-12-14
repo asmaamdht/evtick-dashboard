@@ -24,7 +24,7 @@ const [open, setOpen] = useState(false);
             type="text"
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Event Id/Name / organizer Id"
+            placeholder="Search event name, id, organizer id..."
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 setAutocomplete([]); //hide suggestions on enter

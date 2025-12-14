@@ -7,22 +7,16 @@ export default function Layout() {
 
         <div className="relative flex min-h-screen">
 
-            {/* <div
-                className="
-                    absolute inset-0
-                    bg-[url('src/assets/images/home-bg.jpg')] bg-cover bg-center bg-no-repeat
-                    blur-xl
-                "
-            /> */}
 
             <div className="absolute inset-0 bg-[#F4F7FA]" />
 
             <div className="relative z-10 flex w-full">
                 <Sidebar />
-                <main className="flex-1 flex flex-col ml-28 peer-hover:ml-[280px] p-6 transition-all duration-400 ease-in-out overflow-hidden
-">
+                <main className="flex-1 flex flex-col ml-28 lg:peer-hover:ml-[280px] transition-all duration-400 ease-in-out h-screen overflow-hidden py-6 pr-6">
                     <Navbar />
-                    <Outlet />
+                    <div className="flex-1 overflow-auto scrollbar-hide">
+                        <Outlet />
+                    </div>
                 </main>
             </div>
         </div>

@@ -51,20 +51,20 @@ const handleLogin = async (e) => {
 
     const userData = snap.data();
 
-    // ------------- ROLE VALIDATION BEFORE ANYTHING -------------
+    // role validation
     if (!userData.role || !["admin", "organizer"].includes(userData.role)) {
       setErrors((prev) => ({
         ...prev,
         firebase: "You are not authorized to access this system.",
       }));
 
-      // Logout completely
+      // Logout
       await auth.signOut();
       localStorage.removeItem("user");
       return;
     }
 
-    // ------------- SAVE ONLY IF AUTHORIZED -------------
+    
     const safeUser = {
       uid: cred.user.uid,
       fullName: userData.fullName,
@@ -108,7 +108,7 @@ const handleLogin = async (e) => {
 
       <form onSubmit={handleLogin} className="space-y-4">
 
-        {/* EMAIL */}
+        {/* email */}
         <div>
           <input
             type="email"
@@ -122,7 +122,7 @@ const handleLogin = async (e) => {
           )}
         </div>
 
-        {/* PASSWORD */}
+        {/* pass*/}
         <div className="relative">
           <input
             type={show ? "text" : "password"}
@@ -148,12 +148,12 @@ const handleLogin = async (e) => {
           <p className="text-red-400 text-sm text-center">{errors.firebase}</p>
         )}
 
-        {/* FORGOT PASSWORD */}
+        {/* forgot pass */}
         <p className="text-sm font-medium mt-2 text-right text-[#0f9386]">
           <Link to="/forgot-password">Forgot Password?</Link>
         </p>
 
-        {/* SUBMIT BUTTON */}
+        {/* submit btn*/}
         <button
           type="submit"
           className="w-full py-3 bg-[#0f9386] text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition"
