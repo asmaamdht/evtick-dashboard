@@ -1,13 +1,10 @@
-import React from 'react'
-import ChatAD from '../components/chat/ChatAD'
+import React from "react";
+import ChatAD from "../components/chat/ChatAD";
 
-function ChatPageAD() {
+export default function ChatPageAD() {
   return (
-    <div>
-
+    <div className="p-6">
       <ChatAD />
     </div>
-  )
+  );
 }
-
-export default ChatPageAD

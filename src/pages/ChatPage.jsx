@@ -1,13 +1,10 @@
-import React from 'react'
-import Chat from '../components/chat/chat'
+import React from "react";
+import UserChat from './../components/chat/Chat';
 
-function ChatPage() {
+export default function ChatPage() {
   return (
-    <div>
-
-      <Chat />
+    <div className="p-6">
+      <UserChat />
     </div>
-  )
+  );
 }
-
-export default ChatPage
