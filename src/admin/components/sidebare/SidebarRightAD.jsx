@@ -8,6 +8,9 @@ import {
     AiFillContacts
 
 } from "react-icons/ai";
+import { BsChatDotsFill } from "react-icons/bs";
+import { MdEventSeat } from "react-icons/md";
+
 
 import { NavLink } from "react-router-dom";
 
@@ -30,8 +33,9 @@ export default function SidebarRightAD() {
                 <SidebarButton to="manage-events" icon={<AiOutlineCalendar />} label="Manage Events" />
                 <SidebarButton to="analysize" icon={<AiOutlineBarChart />} label="analysize" />
                 <SidebarButton to="attendance" icon={<AiOutlineTeam />} label="Visitors" />
+                <SidebarButton to="modelsSeat" icon={<MdEventSeat />} label="Models Seat" />
                 <SidebarButton to="contactUs" icon={<AiFillContacts />} label="Contact Us" />
-
+                <SidebarButton to="chatRoom" icon={<BsChatDotsFill />} label="Chat" />
             </div>
 
 
