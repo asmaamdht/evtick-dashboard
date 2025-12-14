@@ -100,3 +100,12 @@ button:focus-visible {
 
 
 
+
+/* display scroll in dashboard */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; 
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none; 
+}

@@ -32,6 +32,20 @@ export const fetchEventsByType = createAsyncThunk(
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 );
+// --- Fetch events by Organizer ---
+export const fetchEventsByOrganizer = createAsyncThunk(
+  "events/fetchEventsByOrganizer",
+  async (organizerUid, { dispatch }) => {
+    if (!organizerUid) {
+      return dispatch(fetchAllEvents()).unwrap();
+    }
+    const q = query(collection(db, "events"), where("organizerUid", "==", organizerUid));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+  }
+);
+
 
 // --- Fetch single event by ID ---
 export const fetchEventById = createAsyncThunk(
@@ -59,7 +73,7 @@ export const addNewEvent = createAsyncThunk(
   "events/addEvent",
   async (eventData) => {
     const docRef = await addDoc(collection(db, "events"), eventData);
-    return { id: docRef.id, ...eventData }; 
+    return { id: docRef.id, ...eventData };
   }
 );
 
@@ -105,27 +119,27 @@ export const updateEventAfterCheckout = createAsyncThunk(
 export const fetchUserTickets = createAsyncThunk(
   "events/fetchUserTickets",
   async (userId) => {
-  
+
     const snapshot = await getDocs(collection(db, "events"));
     const userTickets = [];
-    
+
     snapshot.docs.forEach(doc => {
       const eventData = doc.data();
-      
+
       // Check if bookedSeats exists and is an array
       if (!eventData.bookedSeats || !Array.isArray(eventData.bookedSeats)) {
         console.warn(' No bookedSeats or not an array for event:', doc.id);
         return;
       }
-      
+
       // Filter booked seats for this user
       const userSeats = eventData.bookedSeats.filter(seat => {
         console.log('Checking seat:', seat, 'userId:', seat?.userId, 'matches:', seat?.userId === userId);
         return seat?.userId === userId;
       });
-      
+
       console.log('User seats found:', userSeats.length, 'for event:', doc.id);
-      
+
       // Add each ticket to the array
       userSeats.forEach(seat => {
         userTickets.push({
@@ -136,7 +150,7 @@ export const fetchUserTickets = createAsyncThunk(
         });
       });
     });
-    
+
     console.log('Total user tickets:', userTickets.length);
     return userTickets;
   }
@@ -190,6 +204,33 @@ const eventSlice = createSlice({
         state.errorTypes = action.error.message;
       })
 
+      // --- Events by Organizer ---
+      .addCase(fetchEventsByOrganizer.pending, (state) => {
+        state.loadingEvents = true;
+        state.errorEvents = null;
+      })
+      // .addCase(fetchEventsByOrganizer.fulfilled, (state, action) => {
+      //   state.loadingEvents = false;
+      //   state.events = action.payload;
+      // })
+      .addCase(fetchEventsByOrganizer.fulfilled, (state, action) => {
+        state.loadingEvents = false;
+        state.events = action.payload.map(e => ({
+          ...e,
+          date: e.date?.toDate ? e.date.toDate().toISOString() : e.date?.toISOString(),
+          eventDate: e.eventDate?.toDate ? e.eventDate.toDate().toISOString() : e.eventDate?.toISOString(),
+          createdAt: e.createdAt?.toDate ? e.createdAt.toDate().toISOString() : e.createdAt?.toISOString(),
+          updatedAt: e.updatedAt?.toDate ? e.updatedAt.toDate().toISOString() : e.updatedAt?.toISOString(),
+        }));
+      })
+
+
+      .addCase(fetchEventsByOrganizer.rejected, (state, action) => {
+        state.loadingEvents = false;
+        state.errorEvents = action.error.message;
+      })
+
+
       // --- Events by Type ---
       .addCase(fetchEventsByType.pending, (state) => {
         state.loadingEvents = true;
@@ -208,8 +249,19 @@ const eventSlice = createSlice({
       .addCase(fetchEventById.pending, (state) => {
         state.errorCurrentEvent = null;
       })
+      // .addCase(fetchEventById.fulfilled, (state, action) => {
+      //   state.currentEvent = action.payload;
+      // })
       .addCase(fetchEventById.fulfilled, (state, action) => {
-        state.currentEvent = action.payload;
+        const e = action.payload;
+        if (!e) return;
+        state.currentEvent = {
+          ...e,
+          date: e.date?.toDate ? e.date.toDate().toISOString() : e.date?.toISOString(),
+          eventDate: e.eventDate?.toDate ? e.eventDate.toDate().toISOString() : e.eventDate?.toISOString(),
+          createdAt: e.createdAt?.toDate ? e.createdAt.toDate().toISOString() : e.createdAt?.toISOString(),
+          updatedAt: e.updatedAt?.toDate ? e.updatedAt.toDate().toISOString() : e.updatedAt?.toISOString(),
+        };
       })
       .addCase(fetchEventById.rejected, (state, action) => {
         state.errorCurrentEvent = action.error.message;
@@ -231,7 +283,7 @@ const eventSlice = createSlice({
         state.events.push(action.payload);
       })
 
-          // --- Update Event After Checkout
+      // --- Update Event After Checkout
       .addCase(updateEventAfterCheckout.pending, (state) => {
         state.loading = true;
       })
@@ -243,7 +295,7 @@ const eventSlice = createSlice({
         state.error = action.payload;
       })
 
-            // --- Fetch User Tickets ---
+      // --- Fetch User Tickets ---
       .addCase(fetchUserTickets.pending, (state) => {
         state.loadingTickets = true;
         state.errorTickets = null;

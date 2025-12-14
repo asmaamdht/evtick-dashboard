@@ -17,7 +17,7 @@ export default function SidebarLeftAD() {
             <div className="w-9 h-9 mb-10 flex items-center justify-center  text-white text-xl">
                 <FaBars />
             </div>
-            <LeftButton to="/admin" icon={<AiFillHome />} />
+            <LeftButton to="/admin" end icon={<AiFillHome />} />
             <LeftButton to="chat" icon={<BsChatDotsFill />} />
             <LeftButton to="users" icon={<AiOutlineUser />} />
 
@@ -28,10 +28,11 @@ export default function SidebarLeftAD() {
     );
 }
 
-function LeftButton({ to, icon }) {
+function LeftButton({ to, icon, end }) {
     return (
         <NavLink
             to={to}
+            end={end}
             className={({ isActive }) => `
             w-9 h-9 grid place-items-center rounded-lg mb-6 text-xl transition duration-300
             ${isActive

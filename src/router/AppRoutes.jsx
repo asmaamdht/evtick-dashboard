@@ -25,7 +25,8 @@ import ManageEventPageAD from "../admin/pages/ManageEventPageAD";
 import UsersPageAD from "../admin/pages/UsersPageAD";
 import AdminLayout from "../admin/Layout/AdminLayout";
 import ProfileAD from "../admin/components/setting/ProfileAD";
-
+import ChatRoomPage from "../admin/pages/ChatRoomPage";
+import ModelsSeatPageAD from "../admin/pages/ModelsSeatPageAD";
 export default function AppRoutes() {
   return (
     <Routes>
@@ -96,6 +97,8 @@ export default function AppRoutes() {
         <Route path="manage-events" element={<ManageEventPageAD />} />
         <Route path="users" element={<UsersPageAD />} />
         <Route path="profile" element={<ProfileAD />} />
+        <Route path="chatRoom" element={<ChatRoomPage />} />
+        <Route path="modelsSeat" element={<ModelsSeatPageAD />} />
       </Route>
 
     </Routes>
