@@ -12,7 +12,7 @@ export default function EventRequestModal({
     <>
       {/* moadl */}
       <div className="fixed inset-0 bg-black/15 flex items-center justify-center px-4 z-50">
-        <div className="bg-white/60 backdrop-blur-sm rounded-xl shadow-xl overflow-y-auto max-h-[90vh] p-6 px-8">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-xl overflow-y-auto max-h-[90vh] p-6 px-8">
 
           <h2 className="text-2xl font-bold mb-4">{event.eventName}</h2>
 
@@ -49,7 +49,7 @@ export default function EventRequestModal({
            {/* description */}
           <div className="mt-6">
             <h3 className="font-semibold mb-2">Description</h3>
-            <div className="border shadow py-2 text-gray-700 whitespace-pre-line">
+            <div className="border shadow p-2 text-gray-700 whitespace-pre-line">
               {event.description}
             </div>
           </div>
@@ -125,7 +125,7 @@ function Info({ label, value }) {
   return (
     <div >
       <p className="text-gray-500 text-xs mb-1">{label}</p>
-      <div className="font-medium py-2 border shadow">{value}</div>
+      <div className="font-medium p-2 border shadow">{value}</div>
     </div>
   );
 }
