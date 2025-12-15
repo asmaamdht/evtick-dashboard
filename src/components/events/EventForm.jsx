@@ -23,8 +23,11 @@ export default function EventForm({
 
    return (<div className="max-w-6xl ">  
        <h2 className=" text-2xl font-bold mb-6">{eventId?"Edit Event":"Create Event"}</h2>
-       <div className="shadow border p-3 bg-white rounded-xl">
-      <div className="grid grid-cols-3 gap-4">
+       <div className="p-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+  {/* LEFT: takes 2/3 of the row */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:col-span-2 p-3 shadow border bg-white rounded-xl">
         <Field label="Event Name" value={form.eventName} onChange={v=>update("eventName",v)} error={errors.eventName}/>
         
         {/* type and auto suggest */}
@@ -66,8 +69,17 @@ export default function EventForm({
         )}
 
         </div>
-  
-        <Field label="Address" value={form.address} onChange={v=>update("address",v)} error={errors.address} className="mt-3"/>
+        </div>
+   <div className="shadow border p-3 bg-white rounded-xl flex flex-col items-center justify-center">
+         {/* <div className="grid grid-rows-2 gap-2"> */}
+        <label className=" block mb-2 text-teal-600 font-semibold">Event Type</label>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-12 mt-1">
+          <Radio label="Online"  checked={form.mode==="online"}  onChange={()=>update("mode","online")}/>
+          <Radio label="Offline" checked={form.mode==="offline"} onChange={()=>update("mode","offline")}/>
+        </div>
+        {/* </div> */}
+        </div>
+      
   </div>
   </div>
     <div className=" grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -118,6 +130,21 @@ export default function EventForm({
       {/* RIGHT SIDE */}
 
       <div className="flex flex-col gap-4 mt-2" >
+
+         {/* total tickets and mode */}
+ <div className="grid grid-cols-2 gap-4 mt-4">
+  <div className="shadow border p-3 bg-white rounded-xl ">
+  <Field label="Venue" value={form.address} onChange={v=>update("address",v)} error={errors.address} className="mt-3"/>
+  </div>
+  <div className="shadow border p-3 bg-white rounded-xl ">
+      <Field type="number" 
+      label="Total Tickets" 
+      value={form.totalTickets} 
+     onChange={(v) => update("totalTickets", v)}
+      error={errors.totalTickets}/>
+      </div>
+     
+  </div>
 
          {/* date and time */}
        <div className="shadow border p-2 mt-5 bg-white rounded-xl">
@@ -194,7 +221,7 @@ export default function EventForm({
   </div>
   
    {/* total tickets and mode */}
- <div className="grid grid-cols-2 gap-4 mt-4">
+ {/* <div className="grid grid-cols-2 gap-4 mt-4">
   <div className="shadow border p-3 bg-white rounded-xl ">
       <Field type="number" 
       label="Total Tickets" 
@@ -211,7 +238,7 @@ export default function EventForm({
         </div>
         </div>
         </div>
-  </div>
+  </div> */}
   
       
       </div>
