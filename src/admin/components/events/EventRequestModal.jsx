@@ -34,7 +34,10 @@ export default function EventRequestModal({
               label="Date"
               value={event.date.toDate().toLocaleDateString()}
             />
-            <Info label="Address" value={event.address} />
+             <Info
+          label={event.mode === "offline" ? "Venue" : "Address"}
+         value={event.mode === "offline" ? event.venue?.name : event.address}
+        />
            
             <Info
               label="Time"
@@ -56,13 +59,13 @@ export default function EventRequestModal({
 
           {/* prices*/}
           <div className="mt-6">
-            <h3 className="font-semibold mb-2">Ticket Prices</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <Price label="A" value={event.price?.A} />
-              <Price label="B" value={event.price?.B} />
-              <Price label="C" value={event.price?.C} />
-              <Price label="D" value={event.price?.D} />
-            </div>
+         <h3 className="font-semibold mb-2">Ticket Prices</h3>
+        <div className="grid grid-cols-2 gap-3">
+       {event.price &&
+       Object.keys(event.price).map((row) => (
+        <Price key={row} label={row} value={event.price[row]} />
+      ))}
+  </div>
           </div>
 
           {/*btns*/}

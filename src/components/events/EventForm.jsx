@@ -9,13 +9,24 @@ import "react-datetime/css/react-datetime.css";
 import "../../style/index.css";  
 
 export default function EventForm({
-  form,
+    form,
   errors,
   update,
   save,
+  categories,
+
   showSuggestions,
   setShowSuggestions,
-  categories
+
+  venues,
+  filteredVenues,
+  onVenueSearch,
+  selectVenue,
+  showVenueSuggestions,
+  setShowVenueSuggestions,
+
+  rows,
+  bookedDates
 }) {
   
   const { eventId } = useParams();
@@ -74,8 +85,15 @@ export default function EventForm({
          {/* <div className="grid grid-rows-2 gap-2"> */}
         <label className=" block mb-2 text-teal-600 font-semibold">Event Type</label>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-12 mt-1">
-          <Radio label="Online"  checked={form.mode==="online"}  onChange={()=>update("mode","online")}/>
-          <Radio label="Offline" checked={form.mode==="offline"} onChange={()=>update("mode","offline")}/>
+            <Radio
+          label="Online"
+          checked={form.mode==="online"}
+          onChange={eventId ? undefined : () => update("mode","online")}
+          />
+
+          <Radio label="Offline" 
+          checked={form.mode==="offline"} 
+          onChange={eventId ? undefined : ()=>update("mode","offline")}/>
         </div>
         {/* </div> */}
         </div>
@@ -133,15 +151,52 @@ export default function EventForm({
 
          {/* total tickets and mode */}
  <div className="grid grid-cols-2 gap-4 mt-4">
+ <div className="shadow border p-3 bg-white rounded-xl ">
+  {form.mode === "offline" ? (
+    <div className="relative">
+      <Field
+        label="Venue"
+        value={form.address}
+        onChange={eventId ? undefined : onVenueSearch}
+        error={errors.address}
+        onFocus={() => !eventId && setShowVenueSuggestions(true)}
+        disabled={!!eventId}
+      />
+
+      {showVenueSuggestions && (
+        <div className="absolute w-full bg-white border shadow z-40 rounded max-h-36 overflow-y-auto">
+          {filteredVenues.map(v => (
+            <p
+              key={v.id}
+              onMouseDown={() => selectVenue(v)}
+              className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+            >
+              {v.name}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  ) : (
+    <Field
+      label="Online Event Address"
+      value={form.address}
+      onChange={v => update("address", v)}
+      error={errors.address}
+    />
+  )}
+</div>
+
+
   <div className="shadow border p-3 bg-white rounded-xl ">
-  <Field label="Venue" value={form.address} onChange={v=>update("address",v)} error={errors.address} className="mt-3"/>
-  </div>
-  <div className="shadow border p-3 bg-white rounded-xl ">
-      <Field type="number" 
-      label="Total Tickets" 
-      value={form.totalTickets} 
-     onChange={(v) => update("totalTickets", v)}
-      error={errors.totalTickets}/>
+     <Field
+  type="number"
+  label="Total Tickets"
+  value={form.totalTickets}
+  error={errors.totalTickets}
+  disabled={form.mode === "offline"}
+  onChange={form.mode === "online" ? v => update("totalTickets", v) : undefined}
+/>
       </div>
      
   </div>
@@ -150,12 +205,14 @@ export default function EventForm({
        <div className="shadow border p-2 mt-5 bg-white rounded-xl">
   <div className="grid grid-cols-2 gap-3 mt-2">
     <Field
-      type="date"
-      label="Event Date"
-      value={form.date}
-      onChange={(v) => update("date", v)}
-      error={errors.date}
-    />
+  type="date"
+  label="Event Date"
+  value={form.date}
+  onChange={eventId ? undefined : v => update("date", v)}
+  disabled={!!eventId}
+  error={errors.date}
+/>
+
   
     <Field
       type="time"
@@ -187,11 +244,23 @@ export default function EventForm({
     timeFormat="HH:mm"
     dateFormat="YYYY-MM-DD"
     input={false}       // keeps it always open
-    isValidDate={(currentDate) => {
-    // disable today and all past dates
-    const tomorrowDate = dayjs().add(1, "day").startOf("day");
-    return currentDate.isAfter(tomorrowDate); 
-  }}
+   isValidDate={(currentDate) => {
+  const day = currentDate.format("YYYY-MM-DD");
+
+  // past dates
+  if (currentDate.isSameOrBefore(dayjs(), "day")) return false;
+
+  // edit mode: lock everything except the original date
+  if (eventId) {
+    return day === form.date;
+  }
+
+  // block booked
+  return !bookedDates.includes(day);
+}}
+
+
+
   />
   </div>
 </div>
@@ -207,14 +276,17 @@ export default function EventForm({
     <p className="mb-2">Ticket Prices</p>
     <div>
     <div className="grid grid-cols-2 gap-4 p-2 shadow border rounded-xl">
-      <Field label="A" type="number" value={form.priceA}  onChange={(v) => update("priceA", v)}
-    error={errors.priceA}/>
-      <Field label="B" type="number" value={form.priceB}  onChange={(v) => update("priceB", v)}
-    error={errors.priceB}/>
-      <Field label="C" type="number" value={form.priceC}  onChange={(v) => update("priceC", v)}
-    error={errors.priceC}/>
-      <Field label="D" type="number" value={form.priceD}  onChange={(v) => update("priceD", v)}
-    error={errors.priceD}/>
+      {rows.map(row => (
+  <Field
+    key={row}
+    label={form.mode === "online" ? "Ticket Price" : row}
+    type="number"
+    value={form[`price${row}`]}
+    onChange={v => update(`price${row}`, v)}
+    error={errors[`price${row}`]}
+  />
+))}
+
     </div>
     </div>
   </div>
@@ -256,12 +328,18 @@ export default function EventForm({
   }
   
   /* feild and radio component*/
-  function Field({label,value,onChange,type="text",error,onFocus}){
+  function Field({ label, value, onChange, type="text", error, onFocus, disabled }) {
     return(
    <div >
     <label>{label}</label>
-    <input type={type} value={value||""} onChange={e=>onChange(e.target.value)} onFocus={onFocus}
+    <input 
+    type={type}
+    value={value || ""}
+    disabled={disabled}
+    onChange={e => onChange?.(e.target.value)}
+    onFocus={onFocus}
     className={`w-full p-2 rounded mt-1 bg-gray-100/60 border
+          ${disabled ? "opacity-60 cursor-not-allowed" : ""}
           ${error 
             ? "border-red-500 focus:border-red-500" 
             : "border-gray-300 focus:border-teal-500 "
