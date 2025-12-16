@@ -27,6 +27,11 @@ export default function EventRequestsPageAD() {
   const [categories, setCategories] = useState([]);
   const [autocomplete, setAutocomplete] = useState([]);
 
+  const isSameDay = (d1, d2) => {
+  return (
+    d1.toDate().toDateString() === d2.toDate().toDateString()
+  );
+};
 
   
   // load pendingEvents +eventTypes
@@ -63,7 +68,7 @@ export default function EventRequestsPageAD() {
       result = result.filter(ev => ev.type === category);
     }
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // filtered 
     setFiltered(result);
   }, [search, category, pendingEvents]);
 
@@ -101,35 +106,85 @@ export default function EventRequestsPageAD() {
   };
 
   //approve event
-  const approveEvent = async () => {
-    if (!selected) return;
+const approveEvent = async () => {
+  if (!selected) return;
 
-    const newRef = doc(db, "events", selected.id);
-    await setDoc(newRef, selected);
-    await deleteDoc(doc(db, "pendingEvents", selected.id));
+  // publish approved event
+  await setDoc(doc(db, "events", selected.id), selected);
+  await deleteDoc(doc(db, "pendingEvents", selected.id));
 
-     // Notify Organizer
-    try {
-      if (selected.organizerUid) {
-        await addDoc(collection(db, "notifications"), {
-          uid: selected.organizerUid,
-          title: "Event Approved",
-          message: `Your event "${selected.eventName}" has been approved and published.`,
-          timestamp: new Date(),
-          read: false,
-          type: "success"
-        });
-      }
-    } catch (error) {
-      console.error("Error creating notification: ", error);
+  // notify approved organizer
+  if (selected.organizerUid) {
+    await addDoc(collection(db, "notifications"), {
+      uid: selected.organizerUid,
+      title: "Event Approved",
+      message: `Your event "${selected.eventName}" has been approved and published.`,
+      timestamp: new Date(),
+      read: false,
+      type: "success",
+    });
+  }
+
+  // find conflicting pending events
+  const conflicts = pendingEvents.filter(ev => {
+    if (ev.id === selected.id) return false;
+
+    // same day
+    if (!isSameDay(ev.date, selected.date)) return false;
+
+    // offline conflict
+    if (
+      selected.mode === "offline" &&
+      ev.mode === "offline" &&
+      ev.venue?.id === selected.venue?.id
+    ) {
+      return true;
     }
 
+    //online conflict
+    if (
+      selected.mode === "online" &&
+      ev.mode === "online"
+    ) {
+      return true;
+    }
 
-    setPendingEvents(p => p.filter(e => e.id !== selected.id));
-    setSelected(null);
+    return false;
+  });
 
-     showSuccess("Event Approved & Published");
-  };
+  //auto-reject conflicts
+  for (const ev of conflicts) {
+    await deleteDoc(doc(db, "pendingEvents", ev.id));
+
+    if (ev.organizerUid) {
+      await addDoc(collection(db, "notifications"), {
+        uid: ev.organizerUid,
+        title: "Event Rejected",
+        message:
+          selected.mode === "offline"
+            ? "This venue is already booked for the selected date. Please choose another date."
+            : "This date is already booked. Please choose another date.",
+        timestamp: new Date(),
+        read: false,
+        type: "error",
+      });
+    }
+  }
+
+  // Update pending events page
+  setPendingEvents(prev =>
+    prev.filter(ev =>
+      ev.id !== selected.id &&
+      !conflicts.some(c => c.id === ev.id)
+    )
+  );
+
+  setSelected(null);
+  showSuccess("Event Approved & Published");
+};
+
+
+
 
   //refuse event
   const refuseEvent = async (reason) => {
