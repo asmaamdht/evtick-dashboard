@@ -1,19 +1,20 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import CircularChart from "./CircularCharts";
+import CircularChartAD from "./CircularChartAD";
 
-function AnalyticsCards({ activeAttendance, totalRevenue }) {
+function AnalyticsCardAD() {
     const {
-        upcomingEvents,
+        totalEvents,
+        totalRevenue,
         ticketsSold,
-
-    } = useSelector((state) => state.analyticsCards);
+        activeAttendance,
+    } = useSelector((state) => state.analyticsAD);
 
     const analyticsData = [
         {
             title: "Events",
             text: "Events",
-            value: upcomingEvents,
+            value: totalEvents,
             bgColor: "bg-blue-100/20",
             chartColor: "#0f9386",
         },
@@ -40,7 +41,6 @@ function AnalyticsCards({ activeAttendance, totalRevenue }) {
         },
     ];
 
-
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {analyticsData.map((item, index) => (
@@ -51,18 +51,21 @@ function AnalyticsCards({ activeAttendance, totalRevenue }) {
                     <div className="flex flex-col gap-2">
                         <div className="text-gray-600 text-xl font-semibold">{item.title}</div>
                         <div className="text-2xl text-gray-800 font-semibold font-header">
-                            {item.value} {item.text}
+                            {item.title === "Total Revenue"
+                                ? `${Number(item.value).toLocaleString("en-US")} EGP`
+                                : `${item.value} ${item.text}`}
                         </div>
+
                     </div>
 
                     <div>
-                        <CircularChart
+                        <CircularChartAD
                             value={item.value}
                             maxValue={
-                                item.title === "Total Revenue" ? 10000 :
-                                    item.title === "Events" ? 50 :
-                                        item.title === "Tickets Sold" ? 1000 :
-                                            item.title === "Active Attendance" ? 500 :
+                                item.title === "Total Revenue" ? 100000 :
+                                    item.title === "Events" ? 200 :
+                                        item.title === "Tickets Sold" ? 5000 :
+                                            item.title === "Active Attendance" ? 1000 :
                                                 100
                             }
                             color={item.chartColor}
@@ -75,4 +78,4 @@ function AnalyticsCards({ activeAttendance, totalRevenue }) {
 }
 
 
-export default AnalyticsCards;
+export default AnalyticsCardAD;

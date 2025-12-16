@@ -1,39 +1,37 @@
-import React, { useMemo } from "react";
+import React from "react";
 import dayjs from "dayjs";
 
 import { AiOutlineEnvironment } from "react-icons/ai";
 
 import { useNavigate } from "react-router-dom";
-import NoEvent from "./NoEvent";
+import NoEventsCard from "./NoEventsCard";
 
 
 
-const DayEvent = ({ events = [], selectedDate }) => {
+const DayEvents = ({ events = [], selectedDate }) => {
     const navigate = useNavigate();
 
-    const dayEvents = useMemo(() => {
-        return events
-            .filter(e => {
-                const dateField = e.date;
-                if (!dateField) return false;
+    const dayEvents = events.filter(e => {
+        const dateField = e.date || e.eventDate;
+        if (!dateField) return false;
 
-                // const eventDate = dateField.toDate ? dayjs(dateField.toDate()) : dayjs(dateField);
-                const eventDate = dayjs(e.date);
-                return eventDate.format("YYYY-MM-DD") === selectedDate.format("YYYY-MM-DD");
-            })
-            .sort((a, b) => {
-                if (a.time && b.time) {
-                    const timeA = dayjs(`2000-01-01 ${a.time.split('-')[0]}`);
-                    const timeB = dayjs(`2000-01-01 ${b.time.split('-')[0]}`);
-                    return timeA.diff(timeB);
-                }
-                return 0;
-            })
-            .slice(0, 1);
-    }, [events, selectedDate]);
+        const eventDate = dateField.toDate ? dayjs(dateField.toDate()) : dayjs(dateField);
+
+        return eventDate.format("YYYY-MM-DD") === selectedDate.format("YYYY-MM-DD");
+    }).sort((a, b) => {
+        // Sort by time if available
+        if (a.time && b.time) {
+            // Simplified sort assuming "HH:mm AM" format or similar. 
+            // For robust sorting, we might need Dayjs custom parse
+            const timeA = dayjs(`2000-01-01 ${a.time.split('-')[0]}`);
+            const timeB = dayjs(`2000-01-01 ${b.time.split('-')[0]}`);
+            return timeA.diff(timeB);
+        }
+        return 0;
+    }).slice(0, 1);
 
     return (
-        <div className="flex-1 backdrop-blur-md rounded-xl h-[330px]">
+        <div className="flex-1 backdrop-blur-md rounded-xl h-[330px] ">
 
             {dayEvents.length > 0 ? (
                 <div className="flex flex-col gap-4">
@@ -53,7 +51,6 @@ const DayEvent = ({ events = [], selectedDate }) => {
                                             {dayjs(e.createdAt).format("MMMM DD, YYYY • hh:mm A")}
                                         </span>
                                     )}
-
                                 </div>
                             )}
 
@@ -98,13 +95,13 @@ const DayEvent = ({ events = [], selectedDate }) => {
 
 
 
-                                {/* {((e.date)) && (
+                                {((e.date) || e.time) && (
                                     <div className="absolute bottom-2 left-2 flex gap-2 text-gray-500 text-xs bg-white/80 backdrop-blur-sm px-2 py-1 rounded-md">
                                         <div className="flex flex-col">
                                             <span>{dayjs((e.date)?.toDate ? (e.date).toDate() : (e.date)).format("DD MMM YYYY")}</span>
                                         </div>
                                     </div>
-                                )} */}
+                                )}
                             </div>
                         </div>
                     ))}
@@ -112,10 +109,10 @@ const DayEvent = ({ events = [], selectedDate }) => {
             ) : (
 
 
-                <NoEvent />
+                <NoEventsCard />
             )}
         </div>
     );
 };
 
-export default DayEvent;
+export default DayEvents;

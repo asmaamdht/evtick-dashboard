@@ -1,6 +1,6 @@
 import { RadialBarChart, RadialBar } from "recharts";
 
-export default function TopSellingEvents({ data = [] }) {
+export default function TopSellingEventsAD({ data = [] }) {
     if (!data.length) {
         data = [{ name: "No Data", value: 100, fill: "#e5e7eb" }];
     }

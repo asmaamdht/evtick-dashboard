@@ -2,30 +2,31 @@ import { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchEventsByOrganizer } from '../redux/slices/eventSlice';
 import { fetchOrganizerPayments } from '../redux/slices/paymentSlice';
-import dayjs from 'dayjs';
 
-import Contextual from "../components/analysize/EventsByType";
-import PBarChart from "../components/analysize/RevenueByEvent";
-import PChart from "../components/analysize/TopSellingEvents";
-import PLineChart from "../components/analysize/RevenueLineChart";
-import ProgressChart from "../components/analysize/EventsByMode";
+
+import EventsByType from '../components/analysize/EventsByType';
+import EventsByMode from '../components/analysize/EventsByMode';
+import AttendanceLineChar from '../components/analysize/AttendanceLineChar';
+import RevenueByEvent from '../components/analysize/RevenueByEvent';
+import TopSellingEvents from '../components/analysize/TopSellingEvents';
 
 
 function AnalysizePage() {
     const dispatch = useDispatch();
     const { currentUser } = useSelector((state) => state.auth);
-    const user = currentUser || JSON.parse(localStorage.getItem("user"));
 
     const { events } = useSelector((state) => state.events);
     const { organizerPayments } = useSelector((state) => state.payment);
 
-    useEffect(() => {
-        if (user?.uid) {
-            dispatch(fetchEventsByOrganizer(user.uid));
-            dispatch(fetchOrganizerPayments(user.uid));
-        }
-    }, [dispatch, user]);
+    const organizerUID = currentUser?.uid;
+    const organizerName = currentUser?.fullName;
 
+    useEffect(() => {
+        if (organizerUID && organizerName) {
+            dispatch(fetchEventsByOrganizer(organizerUID));
+            dispatch(fetchOrganizerPayments(organizerName));
+        }
+    }, [dispatch, organizerUID, organizerName]);
 
     // Contextual Data (Events By Type) ::
     const contextualData = useMemo(() => {
@@ -47,7 +48,7 @@ function AnalysizePage() {
         const modeCounts = {};
         let total = 0;
         events.forEach(e => {
-            const mode = e.mode || "Unknown";
+            const mode = e.mode || "Online";
             modeCounts[mode] = (modeCounts[mode] || 0) + 1;
             total++;
         });
@@ -61,58 +62,94 @@ function AnalysizePage() {
         }));
     }, [events]);
 
-    // PLineChart Data (Revenue Over Time)
-    const lineChartData = useMemo(() => {
-        const revenueMap = {};
-        organizerPayments.forEach(p => {
-            const date = p.createdAt ? dayjs(p.createdAt).format("MMM DD") : "Unknown";
-            if (date !== "Unknown") {
-                revenueMap[date] = (revenueMap[date] || 0) + (Number(p.amount) || 0);
-            }
+    // LineChart Data (Active Attendance Over Time)
+    const attendanceTrend = useMemo(() => {
+        const attendanceMap = {};
+
+        organizerPayments.forEach(payment => {
+            if (!Array.isArray(payment.tickets)) return;
+
+            const date = payment.createdAt
+                ? new Date(payment.createdAt.seconds
+                    ? payment.createdAt.seconds * 1000
+                    : payment.createdAt
+                ).toISOString().split("T")[0]
+                : null;
+
+            if (!date) return;
+
+            attendanceMap[date] =
+                (attendanceMap[date] || 0) + payment.tickets.length;
         });
-        return Object.keys(revenueMap).map(date => ({
-            date,
-            a: revenueMap[date],
-            b: revenueMap[date] * 0.8
-        })).slice(-7);
+
+        return Object.keys(attendanceMap)
+            .sort((a, b) => new Date(a) - new Date(b))
+            .map(date => ({
+                date,
+                attendance: attendanceMap[date],
+            }));
     }, [organizerPayments]);
 
-    const totalRevenue = useMemo(() => {
-        return organizerPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-    }, [organizerPayments]);
 
     // PBarChart Data (Revenue by Event)
     const barChartData = useMemo(() => {
-        const eventRevenue = {};
-        organizerPayments.forEach(p => {
-            const eventName = p.eventName || "Unknown";
-            eventRevenue[eventName] = (eventRevenue[eventName] || 0) + (Number(p.amount) || 0);
+        const eventRevenueMap = {};
+
+        organizerPayments.forEach(payment => {
+            // لو فيه tickets
+            if (!Array.isArray(payment.tickets)) return;
+
+            const eventName = payment.eventName || "Unknown Event";
+
+            // حساب الإيراد من كل تذكرة
+            const revenueFromTickets = payment.tickets.reduce(
+                (sum, ticket) => sum + (Number(ticket.price) || 0),
+                0
+            );
+
+            eventRevenueMap[eventName] =
+                (eventRevenueMap[eventName] || 0) + revenueFromTickets;
         });
 
-        if (organizerPayments.length === 0 && events.length > 0) {
-            return events.map(e => ({
-                name: e.eventName,
-                value: (e.ticketsSold || 0) * 100
-            })).slice(0, 10);
-        }
+        // تحويل الكائن لمصفوفة وأخذ أعلى 10 أحداث
+        return Object.entries(eventRevenueMap)
+            .sort(([, aValue], [, bValue]) => bValue - aValue)
+            .slice(0, 10)
+            .map(([name, value]) => ({ name, value }));
+    }, [organizerPayments]);
 
-        return Object.keys(eventRevenue).map(name => ({
-            name,
-            value: eventRevenue[name]
-        })).slice(0, 10);
-    }, [organizerPayments, events]);
+
+
 
     // PChart Data (Top Events by Tickets Sold)
+
+
     const radialData = useMemo(() => {
-        // Sort Events By TicketsSold
-        const sortedEvents = [...events].sort((a, b) => (b.ticketsSold || 0) - (a.ticketsSold || 0)).slice(0, 4);
+        const eventSeatMap = {};
+
+        organizerPayments.forEach(payment => {
+            if (!Array.isArray(payment.tickets)) return;
+
+            const eventName = payment.eventName || "Unknown Event";
+
+            // Value = Seats
+            const seatsCount = payment.tickets.length;
+
+            eventSeatMap[eventName] =
+                (eventSeatMap[eventName] || 0) + seatsCount;
+        });
+
         const colors = ["#0f9386", "#C9A7F5", "#6CA7FF", "#96E6B3", "#F7A8C4"];
-        return sortedEvents.map((e, index) => ({
-            name: e.eventName,
-            value: e.ticketsSold || 0,
-            fill: colors[index % colors.length]
-        }));
-    }, [events]);
+
+        return Object.entries(eventSeatMap)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([name, value], index) => ({
+                name,
+                value,
+                fill: colors[index % colors.length],
+            }));
+    }, [organizerPayments]);
 
 
     return (
@@ -128,13 +165,13 @@ function AnalysizePage() {
             }}
         >
             <div style={{ gridArea: "contextual" }}>
-                <Contextual data={contextualData} />
+                <EventsByType data={contextualData} />
             </div>
             <div style={{ gridArea: "progress" }}>
-                <ProgressChart data={progressData} />
+                <EventsByMode data={progressData} />
             </div>
             <div style={{ gridArea: "pline" }}>
-                <PLineChart data={lineChartData} total={totalRevenue} />
+                <AttendanceLineChar data={attendanceTrend} />
             </div>
 
             <div
@@ -145,11 +182,11 @@ function AnalysizePage() {
                     // zIndex: 1, // Moved to Tailwind z-10
                 }}
             >
-                <PBarChart data={barChartData} />
+                <RevenueByEvent data={barChartData} />
             </div>
 
             <div style={{ gridArea: "pchart" }}>
-                <PChart data={radialData} />
+                <TopSellingEvents data={radialData} />
             </div>
         </div>
     );
