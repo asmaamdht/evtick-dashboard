@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import dayjs from "dayjs";
 import { AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
+import { useSelector } from "react-redux";
 
-
-const DashboardCalendar = ({ selectedDate, setSelectedDate, events }) => {
+const EventCalendar = ({ selectedDate, setSelectedDate }) => {
     const [currentDate, setCurrentDate] = useState(dayjs());
-
+    const events = useSelector((state) => state.events.events);
 
     const startOfMonth = currentDate.startOf("month");
     const startDay = startOfMonth.day();
@@ -18,8 +18,11 @@ const DashboardCalendar = ({ selectedDate, setSelectedDate, events }) => {
     for (let i = 0; i < startDay; i++) daysArray.push(null);
     for (let i = 1; i <= daysInMonth; i++) daysArray.push(i);
 
+
+
     return (
-        <div className="bg-white backdrop-blur-md p-4 rounded-xl shadow-lg h-[330px] flex-1">
+        <div className="backdrop-blur-md p-4 rounded-xl shadow-lg h-[310px] flex-1">
+            {/* Header */}
             <div className="flex justify-between items-center mb-4">
                 <h2 className="font-bold text-lg text-primary">
                     {currentDate.format("MMMM YYYY")}
@@ -42,21 +45,26 @@ const DashboardCalendar = ({ selectedDate, setSelectedDate, events }) => {
                 </div>
             </div>
 
+            {/* Weekdays */}
             <div className="grid grid-cols-7 text-center font-semibold mb-3 text-textColor">
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
                     <div key={d}>{d}</div>
                 ))}
             </div>
 
+            {/* Days */}
             <div className="grid grid-cols-7 gap-1">
                 {daysArray.map((day, idx) => {
                     const dayObj = day && currentDate.date(day);
 
+
                     // Check Days ::
                     const hasEvent = dayObj && events?.some(event => {
-                        const eventDate = dayjs(event.date);
-                        return dayObj.isSame(eventDate, "day");
+                        const eventStart = dayjs(event.createdAt?.toDate());
+                        const eventEnd = dayjs(event.date?.toDate());
+                        return dayObj.isSame(eventStart, "day") || (dayObj.isAfter(eventStart, "day") && dayObj.isBefore(eventEnd, "day"));
                     });
+
 
                     return (
                         <div
@@ -82,4 +90,4 @@ const DashboardCalendar = ({ selectedDate, setSelectedDate, events }) => {
     );
 };
 
-export default DashboardCalendar;
+export default EventCalendar;

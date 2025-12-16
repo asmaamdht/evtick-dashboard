@@ -8,8 +8,11 @@ export const fetchAllEvents = createAsyncThunk(
   async () => {
     const snapshot = await getDocs(collection(db, "events"));
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
   }
 );
+
+
 
 // --- Fetch event types ---
 export const fetchEventTypes = createAsyncThunk(
@@ -32,20 +35,35 @@ export const fetchEventsByType = createAsyncThunk(
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 );
+
 // --- Fetch events by Organizer ---
 export const fetchEventsByOrganizer = createAsyncThunk(
   "events/fetchEventsByOrganizer",
-  async (organizerUid, { dispatch }) => {
-    if (!organizerUid) {
-      return dispatch(fetchAllEvents()).unwrap();
-    }
-    const q = query(collection(db, "events"), where("organizerUid", "==", organizerUid));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  async (organizerUid) => {
+    let snapshot;
 
+    if (!organizerUid) {
+      snapshot = await getDocs(collection(db, "events"));
+    } else {
+      const q = query(
+        collection(db, "events"),
+        where("organizerUid", "==", organizerUid)
+      );
+      snapshot = await getDocs(q);
+    }
+
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.() || null,
+        eventDate: data.eventDate?.toDate?.() || null,
+        date: data.date?.toDate?.() || null,
+      };
+    });
   }
 );
-
 
 // --- Fetch single event by ID ---
 export const fetchEventById = createAsyncThunk(
@@ -209,20 +227,20 @@ const eventSlice = createSlice({
         state.loadingEvents = true;
         state.errorEvents = null;
       })
-      // .addCase(fetchEventsByOrganizer.fulfilled, (state, action) => {
-      //   state.loadingEvents = false;
-      //   state.events = action.payload;
-      // })
       .addCase(fetchEventsByOrganizer.fulfilled, (state, action) => {
         state.loadingEvents = false;
-        state.events = action.payload.map(e => ({
-          ...e,
-          date: e.date?.toDate ? e.date.toDate().toISOString() : e.date?.toISOString(),
-          eventDate: e.eventDate?.toDate ? e.eventDate.toDate().toISOString() : e.eventDate?.toISOString(),
-          createdAt: e.createdAt?.toDate ? e.createdAt.toDate().toISOString() : e.createdAt?.toISOString(),
-          updatedAt: e.updatedAt?.toDate ? e.updatedAt.toDate().toISOString() : e.updatedAt?.toISOString(),
-        }));
+        state.events = action.payload;
       })
+      // .addCase(fetchEventsByOrganizer.fulfilled, (state, action) => {
+      //   state.loadingEvents = false;
+      //   state.events = action.payload.map(e => ({
+      //     ...e,
+      //     date: e.date?.toDate ? e.date.toDate().toISOString() : e.date?.toISOString(),
+      //     eventDate: e.eventDate?.toDate ? e.eventDate.toDate().toISOString() : e.eventDate?.toISOString(),
+      //     createdAt: e.createdAt?.toDate ? e.createdAt.toDate().toISOString() : e.createdAt?.toISOString(),
+      //     updatedAt: e.updatedAt?.toDate ? e.updatedAt.toDate().toISOString() : e.updatedAt?.toISOString(),
+      //   }));
+      // })
 
 
       .addCase(fetchEventsByOrganizer.rejected, (state, action) => {
@@ -249,20 +267,20 @@ const eventSlice = createSlice({
       .addCase(fetchEventById.pending, (state) => {
         state.errorCurrentEvent = null;
       })
-      // .addCase(fetchEventById.fulfilled, (state, action) => {
-      //   state.currentEvent = action.payload;
-      // })
       .addCase(fetchEventById.fulfilled, (state, action) => {
-        const e = action.payload;
-        if (!e) return;
-        state.currentEvent = {
-          ...e,
-          date: e.date?.toDate ? e.date.toDate().toISOString() : e.date?.toISOString(),
-          eventDate: e.eventDate?.toDate ? e.eventDate.toDate().toISOString() : e.eventDate?.toISOString(),
-          createdAt: e.createdAt?.toDate ? e.createdAt.toDate().toISOString() : e.createdAt?.toISOString(),
-          updatedAt: e.updatedAt?.toDate ? e.updatedAt.toDate().toISOString() : e.updatedAt?.toISOString(),
-        };
+        state.currentEvent = action.payload;
       })
+      // .addCase(fetchEventById.fulfilled, (state, action) => {
+      //   const e = action.payload;
+      //   if (!e) return;
+      //   state.currentEvent = {
+      //     ...e,
+      //     date: e.date?.toDate ? e.date.toDate().toISOString() : e.date?.toISOString(),
+      //     eventDate: e.eventDate?.toDate ? e.eventDate.toDate().toISOString() : e.eventDate?.toISOString(),
+      //     createdAt: e.createdAt?.toDate ? e.createdAt.toDate().toISOString() : e.createdAt?.toISOString(),
+      //     updatedAt: e.updatedAt?.toDate ? e.updatedAt.toDate().toISOString() : e.updatedAt?.toISOString(),
+      //   };
+      // })
       .addCase(fetchEventById.rejected, (state, action) => {
         state.errorCurrentEvent = action.error.message;
       })
