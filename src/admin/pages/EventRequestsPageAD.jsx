@@ -5,7 +5,8 @@ import {
   getDocs,
   doc,
   deleteDoc,
-  setDoc
+  setDoc,
+  addDoc
 } from "firebase/firestore";
 import EventRequestModal from "../components/events/EventRequestModal";
 import Filters from "../components/events/Filters";
@@ -62,6 +63,7 @@ export default function EventRequestsPageAD() {
       result = result.filter(ev => ev.type === category);
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFiltered(result);
   }, [search, category, pendingEvents]);
 
@@ -106,6 +108,23 @@ export default function EventRequestsPageAD() {
     await setDoc(newRef, selected);
     await deleteDoc(doc(db, "pendingEvents", selected.id));
 
+     // Notify Organizer
+    try {
+      if (selected.organizerUid) {
+        await addDoc(collection(db, "notifications"), {
+          uid: selected.organizerUid,
+          title: "Event Approved",
+          message: `Your event "${selected.eventName}" has been approved and published.`,
+          timestamp: new Date(),
+          read: false,
+          type: "success"
+        });
+      }
+    } catch (error) {
+      console.error("Error creating notification: ", error);
+    }
+
+
     setPendingEvents(p => p.filter(e => e.id !== selected.id));
     setSelected(null);
 
@@ -113,10 +132,27 @@ export default function EventRequestsPageAD() {
   };
 
   //refuse event
-  const refuseEvent = async () => {
+  const refuseEvent = async (reason) => {
     if (!selected) return;
 
     await deleteDoc(doc(db, "pendingEvents", selected.id));
+
+    
+    // Notify Organizer
+    try {
+      if (selected.organizerUid) {
+        await addDoc(collection(db, "notifications"), {
+          uid: selected.organizerUid,
+          title: "Event Refused",
+          message: `Your event "${selected.eventName}" was refused. Reason: ${reason}`,
+          timestamp: new Date(),
+          read: false,
+          type: "error"
+        });
+      }
+    } catch (error) {
+      console.error("Error creating notification: ", error);
+    }
 
     setPendingEvents(p => p.filter(e => e.id !== selected.id));
     setSelected(null);

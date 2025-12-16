@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 export default function EventRequestModal({
   event,
   onClose,
@@ -6,6 +8,9 @@ export default function EventRequestModal({
   confirmRefuse,
   setConfirmRefuse,
 }) {
+ 
+  const [refusalReason, setRefusalReason] = useState("");
+
   if (!event) return null;
 
   return (
@@ -94,21 +99,40 @@ export default function EventRequestModal({
       {/*refuse confirmation*/}
       {confirmRefuse && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-80 text-center">
-            <p className="mb-6 text-lg font-semibold">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-96 text-center">
+            <p className="mb-4 text-lg font-semibold">
               Are you sure you want to refuse this event?
             </p>
+
+            <textarea
+              className="w-full p-2 border rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              rows="3"
+              placeholder="Reason for refusal..."
+              value={refusalReason}
+              onChange={(e) => setRefusalReason(e.target.value)} >
+            </textarea>
+
             <div className="flex justify-center gap-4">
               <button
-                onClick={() => setConfirmRefuse(false)}
-                className="px-4 py-2 border rounded-lg"
+                 onClick={() => {
+                  setConfirmRefuse(false);
+                  setRefusalReason("");
+                }}
+                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
 
               <button
-                onClick={onRefuse}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg"
+               onClick={() => {
+                  if (!refusalReason.trim()) {
+                    alert("Please provide a reason for refusal.");
+                    return;
+                  }
+                  onRefuse(refusalReason);
+                  setRefusalReason("");
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
               >
                 Yes, Refuse
               </button>
