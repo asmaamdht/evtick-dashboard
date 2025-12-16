@@ -227,7 +227,7 @@ export default function EventRequestsPageAD() {
 
         <p className="text-xs opacity-80 flex items-center gap-1 mb-1">
             <FaMapMarkerAlt className="text-xs" />
-            {ev.address}
+             {ev.mode === "offline" ? ev.venue?.name : ev.address}
           </p>
 
           <p className="text-sm opacity-90 flex items-center gap-1 mb-1">
