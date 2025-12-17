@@ -67,12 +67,21 @@ export default function EventRequestModal({
           {/* prices*/}
           <div className="mt-6">
          <h3 className="font-semibold mb-2">Ticket Prices</h3>
+
+          {event.mode === "online" && (
+            <div className="text-sm p-2 border shadow text-gray-700">
+        {event.price} EGP
+        </div>
+        )}
+
+         {event.mode === "offline" && (
         <div className="grid grid-cols-2 gap-3">
        {event.price &&
        Object.keys(event.price).map((row) => (
         <Price key={row} label={row} value={event.price[row]} />
       ))}
   </div>
+  )}
           </div>
 
           {/*btns*/}
@@ -170,7 +179,7 @@ function Price({ label, value }) {
   return (
     <div className="p-3 bg-gray-100 rounded-lg text-center">
       <p className="font-bold text-lg">{label}</p>
-      <div className="text-sm py-2 border shadow text-gray-700">{value} egp</div>
+      <div className="text-sm py-2 border shadow text-gray-700">{value} EGP</div>
     </div>
   );
 }
