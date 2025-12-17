@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { db } from "../../firebase/firebase.config";
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useSelector } from "react-redux";
@@ -25,16 +25,22 @@ export default function CreateOrEditEvent() {
   const [selectedVenue, setSelectedVenue] = useState(null);
   const [bookedDates, setBookedDates] = useState([]);
   const [rows, setRows] = useState([]);
+ const [loading, setLoading] = useState(false);
+ const [categories, setCategories] = useState([]);
+
+
+const categoryRef = useRef(null);
+const venueRef = useRef(null);
 
 
 
 
   // const [showPicker, setShowPicker] = useState(false);
   const [errors, setErrors] = useState({});
-  const categories = [
-    "Charity","Entertainment","sports","Tech","Marketing",
-    "Educational","Community","Corporate","School & University"
-  ];
+  // const categories = [
+  //   "Charity","Entertainment","sports","Tech","Marketing",
+  //   "Educational","Community","Corporate","School & University"
+  // ];
 
 
 
@@ -61,6 +67,25 @@ const [form, setForm] = useState(initialForm);
 
 
   const update=(k,v)=>setForm(p=>({...p,[k]:v}));
+
+  //load categories
+  useEffect(() => {
+  const loadCategories = async () => {
+    try {
+      const snap = await getDocs(collection(db, "eventTypes"));
+      const list = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+      // Assuming the 'id' is what you used as category names in old array
+      setCategories(list.map(c => c.id));
+    } catch (err) {
+      console.error("Failed to load categories:", err);
+    }
+  };
+  loadCategories();
+}, []);
+
 
   // load event data if editing
 useEffect(() => {
@@ -275,6 +300,9 @@ useEffect(() => {
   setErrors(errors);
   if (Object.keys(errors).length !== 0) return;
 
+  setLoading(true);
+
+   try {
     const fullDate=new Date(`${form.date}T${form.time}`);
     // const ref = doc(db,"events",eventId || crypto.randomUUID());
     const ref = eventId
@@ -332,20 +360,50 @@ rows.forEach(row => {
     // eventId ? await updateDoc(ref,payload) : await setDoc(ref,payload);
     // alert(eventId?"Updated Successfully":"Admin will review your request");
     showSuccess(eventId?"Updated Successfully":"Admin will review your request");
+    } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false); // stop spinner
+  }
   };
 
-  
+  // Close category dropdown when clicking outside
+useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (categoryRef.current && !categoryRef.current.contains(e.target)) {
+      setShowSuggestions(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, [setShowSuggestions]);
+
+// Close venue dropdown when clicking outside
+useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (venueRef.current && !venueRef.current.contains(e.target)) {
+      setShowVenueSuggestions(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, [setShowVenueSuggestions]);
+
 return (
     <EventForm
   form={form}
   errors={errors}
   update={update}
   save={save}
+  loading={loading}
   categories={categories}
 
   /* category autosuggest */
   showSuggestions={showSuggestions}
   setShowSuggestions={setShowSuggestions}
+  categoryRef={categoryRef}
 
   /* venue logic */
   venues={venues}
@@ -354,6 +412,7 @@ return (
   selectVenue={selectVenue}
   showVenueSuggestions={showVenueSuggestions}
   setShowVenueSuggestions={setShowVenueSuggestions}
+  venueRef={venueRef}
 
   /* seating / booking */
   rows={rows}

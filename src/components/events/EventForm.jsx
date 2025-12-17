@@ -13,10 +13,12 @@ export default function EventForm({
   errors,
   update,
   save,
+  loading,
   categories,
 
   showSuggestions,
   setShowSuggestions,
+  categoryRef,
 
   venues,
   filteredVenues,
@@ -24,6 +26,7 @@ export default function EventForm({
   selectVenue,
   showVenueSuggestions,
   setShowVenueSuggestions,
+  venueRef,
 
   rows,
   bookedDates
@@ -42,7 +45,7 @@ export default function EventForm({
         <Field label="Event Name" value={form.eventName} onChange={v=>update("eventName",v)} error={errors.eventName}/>
         
         {/* type and auto suggest */}
-        <div className="relative">
+        <div className="relative" ref={categoryRef}>
           <Field label="Category" value={form.type}
             onChange={v=>{update("type",v);setShowSuggestions(true)}} 
             onFocus={()=>setShowSuggestions(true)} error={errors.type}
@@ -153,7 +156,7 @@ export default function EventForm({
  <div className="grid grid-cols-2 gap-4 mt-4">
  <div className="shadow border p-3 bg-white rounded-xl ">
   {form.mode === "offline" ? (
-    <div className="relative">
+    <div className="relative" ref={venueRef}>
       <Field
         label="Venue"
         value={form.address}
@@ -319,8 +322,17 @@ export default function EventForm({
       <div className="mt-6 flex justify-end">
         <button
           onClick={save}
-          className="  text-white font-bold p-3 rounded-lg hover:bg-teal-700" style={{ background: "#0f9386" }}>
-          {eventId ? "Save Changes" : "Create Event"}
+          className="  text-white font-bold p-3 rounded-lg hover:bg-teal-700" 
+          style={{ background: "#0f9386" }}>
+             {loading ? (
+      <div className="flex items-center justify-center gap-2">
+        <span className="w-5 h-5 border-2 border-white/60 border-t-white rounded-full animate-spin"></span>
+        {eventId ? "Saving..." : "Creating..."}
+      </div>
+    ) : (
+      eventId ? "Save Changes" : "Create Event"
+    )}
+          {/* {eventId ? "Save Changes" : "Create Event"} */}
         </button>
   </div>
     </div>
