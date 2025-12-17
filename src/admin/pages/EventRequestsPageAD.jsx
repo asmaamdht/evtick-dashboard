@@ -5,7 +5,8 @@ import {
   getDocs,
   doc,
   deleteDoc,
-  setDoc
+  setDoc,
+  addDoc
 } from "firebase/firestore";
 import EventRequestModal from "../components/events/EventRequestModal";
 import Filters from "../components/events/Filters";
@@ -26,6 +27,11 @@ export default function EventRequestsPageAD() {
   const [categories, setCategories] = useState([]);
   const [autocomplete, setAutocomplete] = useState([]);
 
+  const isSameDay = (d1, d2) => {
+  return (
+    d1.toDate().toDateString() === d2.toDate().toDateString()
+  );
+};
 
   
   // load pendingEvents +eventTypes
@@ -62,6 +68,7 @@ export default function EventRequestsPageAD() {
       result = result.filter(ev => ev.type === category);
     }
 
+    // filtered 
     setFiltered(result);
   }, [search, category, pendingEvents]);
 
@@ -99,24 +106,108 @@ export default function EventRequestsPageAD() {
   };
 
   //approve event
-  const approveEvent = async () => {
-    if (!selected) return;
+const approveEvent = async () => {
+  if (!selected) return;
 
-    const newRef = doc(db, "events", selected.id);
-    await setDoc(newRef, selected);
-    await deleteDoc(doc(db, "pendingEvents", selected.id));
+  // publish approved event
+  await setDoc(doc(db, "events", selected.id), selected);
+  await deleteDoc(doc(db, "pendingEvents", selected.id));
 
-    setPendingEvents(p => p.filter(e => e.id !== selected.id));
-    setSelected(null);
+  // notify approved organizer
+  if (selected.organizerUid) {
+    await addDoc(collection(db, "notifications"), {
+      uid: selected.organizerUid,
+      title: "Event Approved",
+      message: `Your event "${selected.eventName}" has been approved and published.`,
+      timestamp: new Date(),
+      read: false,
+      type: "success",
+    });
+  }
 
-     showSuccess("Event Approved & Published");
-  };
+  // find conflicting pending events
+  const conflicts = pendingEvents.filter(ev => {
+    if (ev.id === selected.id) return false;
+
+    // same day
+    if (!isSameDay(ev.date, selected.date)) return false;
+
+    // offline conflict
+    if (
+      selected.mode === "offline" &&
+      ev.mode === "offline" &&
+      ev.venue?.id === selected.venue?.id
+    ) {
+      return true;
+    }
+
+    //online conflict
+    if (
+      selected.mode === "online" &&
+      ev.mode === "online"
+    ) {
+      return true;
+    }
+
+    return false;
+  });
+
+  //auto-reject conflicts
+  for (const ev of conflicts) {
+    await deleteDoc(doc(db, "pendingEvents", ev.id));
+
+    if (ev.organizerUid) {
+      await addDoc(collection(db, "notifications"), {
+        uid: ev.organizerUid,
+        title: "Event Rejected",
+        message:
+          selected.mode === "offline"
+            ? "This venue is already booked for the selected date. Please choose another date."
+            : "This date is already booked. Please choose another date.",
+        timestamp: new Date(),
+        read: false,
+        type: "error",
+      });
+    }
+  }
+
+  // Update pending events page
+  setPendingEvents(prev =>
+    prev.filter(ev =>
+      ev.id !== selected.id &&
+      !conflicts.some(c => c.id === ev.id)
+    )
+  );
+
+  setSelected(null);
+  showSuccess("Event Approved & Published");
+};
+
+
+
 
   //refuse event
-  const refuseEvent = async () => {
+  const refuseEvent = async (reason) => {
     if (!selected) return;
 
     await deleteDoc(doc(db, "pendingEvents", selected.id));
+
+    
+    // Notify Organizer
+    try {
+      if (selected.organizerUid) {
+        await addDoc(collection(db, "notifications"), {
+          uid: selected.organizerUid,
+          title: "Event Refused",
+          message: `Your event "${selected.eventName}" was refused. Reason: ${reason}`,
+          timestamp: new Date(),
+          read: false,
+          type: "error"
+        });
+      }
+    } catch (error) {
+      console.error("Error creating notification: ", error);
+    }
 
     setPendingEvents(p => p.filter(e => e.id !== selected.id));
     setSelected(null);
@@ -146,7 +237,7 @@ export default function EventRequestsPageAD() {
       {/* <div className="flex flex-col lg:flex-row md:items-center md:justify-between gap-4 mb-6"> */}
          <div className="flex flex-col p-6 md:items-start md:justify-start gap-4 mb-6">
 
-        <h1 className="text-3xl font-bold">Pending Event Requests</h1>
+        {/* <h1 className="text-3xl font-bold">Pending Event Requests</h1> */}
 
   <div className="w-full flex md:justify-start mt-5">
       <Filters
@@ -191,7 +282,7 @@ export default function EventRequestsPageAD() {
 
         <p className="text-xs opacity-80 flex items-center gap-1 mb-1">
             <FaMapMarkerAlt className="text-xs" />
-            {ev.address}
+             {ev.mode === "offline" ? ev.venue?.name : ev.address}
           </p>
 
           <p className="text-sm opacity-90 flex items-center gap-1 mb-1">

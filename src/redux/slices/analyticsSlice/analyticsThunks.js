@@ -10,7 +10,6 @@ export const getAnalyticsChartData = createAsyncThunk(
     "analytics/getChartData",
 
     async (organizerUid) => {
-        console.log("organizerUid:", organizerUid);
 
         // Get Events For The Organizer By UID :
         const eventsQuery = query(
@@ -18,7 +17,10 @@ export const getAnalyticsChartData = createAsyncThunk(
             where("organizerUid", "==", organizerUid)
         );
         const eventsSnapshot = await getDocs(eventsQuery);
-        const events = eventsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const events = eventsSnapshot.docs.map(doc => ({
+            id: doc.id, ...doc.data(),
+        }));
 
 
         // Get Payments For The Organizer By UID :
@@ -98,15 +100,43 @@ export const getAnalyticsChartData = createAsyncThunk(
 export const getOrganizerEvents = createAsyncThunk(
     "analytics/getOrganizerEvents",
     async (organizerUid) => {
-        // const now = new Date();
         const eventsQuery = query(
             collection(db, "events"),
-            where("organizerUid", "==", organizerUid),
-            // where("date", ">=", now)
+            where("organizerUid", "==", organizerUid)
         );
+        const organizerEventsSnap = await getDocs(eventsQuery);
 
-        const organizerEvents = await getDocs(eventsQuery);
-        return organizerEvents.size;
+        const events = organizerEventsSnap.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                date: data.date?.toDate?.() || null,
+            };
+        });
+
+        return events.length;
+    }
+);
+
+
+
+export const getTicketsSold = createAsyncThunk(
+    "analytics/getTicketsSold",
+    async (organizerUid) => {
+        const eventsQuery = query(
+            collection(db, "events"),
+            where("organizerUid", "==", organizerUid)
+        );
+        const eventsSnap = await getDocs(eventsQuery);
+
+        let totalTicketsSold = 0;
+        eventsSnap.docs.forEach(doc => {
+            const data = doc.data();
+            totalTicketsSold += Number(data.ticketsSold || 0);
+        });
+
+        return totalTicketsSold;
     }
 );
 
@@ -117,48 +147,56 @@ export const getTotalRevenue = createAsyncThunk(
             collection(db, "payments"),
             where("organizerUid", "==", organizerUid)
         );
-        const payments = await getDocs(paymentsQuery);
+        const paymentsSnap = await getDocs(paymentsQuery);
 
-        let totalRevenue = 0;
-        payments.docs.forEach(doc => {
-            totalRevenue += Number(doc.data().amount) || 0;
+        let total = 0;
+
+        paymentsSnap.docs.forEach(doc => {
+            const data = doc.data();
+
+            if (Array.isArray(data.tickets)) {
+                data.tickets.forEach(ticket => {
+                    total += Number(ticket.price || 0);
+                });
+            }
         });
 
-        return totalRevenue;
+        return total;
     }
 );
-export const getTicketsSold = createAsyncThunk(
-    "analytics/getTicketsSold",
-    async (organizerUid) => {
-        const eventsQuery = query(
-            collection(db, "events"),
-            where("organizerUid", "==", organizerUid)
-        );
-        const events = await getDocs(eventsQuery);
 
-        let totalTicketsSold = 0;
-        events.docs.forEach(doc => {
-            totalTicketsSold += Number(doc.data().ticketsSold) || 0;
-        });
+// export const getActiveAttendance = createAsyncThunk(
+//     "analytics/getActiveAttendance",
+//     async () => {
+//         const paymentsSnap = await getDocs(collection(db, "payments"));
+//         let active = 0;
 
-        return totalTicketsSold;
-    }
-);
+//         paymentsSnap.docs.forEach(doc => {
+//             const tickets = doc.data().tickets || [];
+//             active += tickets.length;
+//         });
+
+//         return active;
+//     }
+// );
+
 
 export const getActiveAttendance = createAsyncThunk(
     "analytics/getActiveAttendance",
     async (organizerUid) => {
-        const eventsQuery = query(
-            collection(db, "events"),
+        const payments = query(
+            collection(db, "payments"),
             where("organizerUid", "==", organizerUid)
         );
-        const events = await getDocs(eventsQuery);
+        const paymentsSnap = await getDocs(payments);
 
-        let activeUser = 0;
-        events.docs.forEach(doc => {
-            activeUser += Number(doc.data().activeAttendance) || 0;
+        let active = 0;
+
+        paymentsSnap.docs.forEach(doc => {
+            const tickets = doc.data().tickets || [];
+            active += tickets.length;
         });
 
-        return activeUser;
+        return active;
     }
 );

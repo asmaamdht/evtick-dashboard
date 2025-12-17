@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 export default function EventRequestModal({
   event,
   onClose,
@@ -6,6 +8,11 @@ export default function EventRequestModal({
   confirmRefuse,
   setConfirmRefuse,
 }) {
+ 
+  const [refusalReason, setRefusalReason] = useState("");
+  const [refusalReasonError, setRefusalReasonError] = useState("");
+
+
   if (!event) return null;
 
   return (
@@ -34,7 +41,10 @@ export default function EventRequestModal({
               label="Date"
               value={event.date.toDate().toLocaleDateString()}
             />
-            <Info label="Address" value={event.address} />
+             <Info
+          label={event.mode === "offline" ? "Venue" : "Address"}
+         value={event.mode === "offline" ? event.venue?.name : event.address}
+        />
            
             <Info
               label="Time"
@@ -56,13 +66,22 @@ export default function EventRequestModal({
 
           {/* prices*/}
           <div className="mt-6">
-            <h3 className="font-semibold mb-2">Ticket Prices</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <Price label="A" value={event.price?.A} />
-              <Price label="B" value={event.price?.B} />
-              <Price label="C" value={event.price?.C} />
-              <Price label="D" value={event.price?.D} />
-            </div>
+         <h3 className="font-semibold mb-2">Ticket Prices</h3>
+
+          {event.mode === "online" && (
+            <div className="text-sm p-2 border shadow text-gray-700">
+        {event.price} EGP
+        </div>
+        )}
+
+         {event.mode === "offline" && (
+        <div className="grid grid-cols-2 gap-3">
+       {event.price &&
+       Object.keys(event.price).map((row) => (
+        <Price key={row} label={row} value={event.price[row]} />
+      ))}
+  </div>
+  )}
           </div>
 
           {/*btns*/}
@@ -94,21 +113,47 @@ export default function EventRequestModal({
       {/*refuse confirmation*/}
       {confirmRefuse && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-80 text-center">
-            <p className="mb-6 text-lg font-semibold">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-96 text-center">
+            <p className="mb-4 text-lg font-semibold">
               Are you sure you want to refuse this event?
             </p>
+
+            <textarea
+              className="w-full p-2 border rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              rows="3"
+              placeholder="Reason for refusal..."
+              value={refusalReason}
+              onChange={(e) => {setRefusalReason(e.target.value);
+                 if (refusalReasonError) setRefusalReasonError("");
+              }} >
+            </textarea>
+            {refusalReasonError && (
+           <p className="text-xs text-red-500 mb-2">{refusalReasonError}</p>
+           )}
+
             <div className="flex justify-center gap-4">
               <button
-                onClick={() => setConfirmRefuse(false)}
-                className="px-4 py-2 border rounded-lg"
+                 onClick={() => {
+                  setConfirmRefuse(false);
+                  setRefusalReason("");
+                   setRefusalReasonError("");
+                }}
+                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
 
               <button
-                onClick={onRefuse}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg"
+               onClick={() => {
+                  if (!refusalReason.trim()) {
+                    setRefusalReasonError("Please provide a reason for refusal.");
+                    return;
+                  }
+                  onRefuse(refusalReason);
+                  setRefusalReason("");
+                  setRefusalReasonError("");
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
               >
                 Yes, Refuse
               </button>
@@ -134,7 +179,7 @@ function Price({ label, value }) {
   return (
     <div className="p-3 bg-gray-100 rounded-lg text-center">
       <p className="font-bold text-lg">{label}</p>
-      <div className="text-sm py-2 border shadow text-gray-700">{value} egp</div>
+      <div className="text-sm py-2 border shadow text-gray-700">{value} EGP</div>
     </div>
   );
 }

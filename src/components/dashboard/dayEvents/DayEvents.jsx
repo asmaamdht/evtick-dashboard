@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import dayjs from "dayjs";
 import DayEvent from "./DayEvent";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchEventsByOrganizer } from "../../../redux/slices/eventSlice";
+import { useSelector } from "react-redux";
+// import { fetchEventsByOrganizer } from "../../../redux/slices/eventSlice";
 import DashboardCalendar from "./DashboardCalender";
 
 function DayEvents() {
@@ -39,20 +39,20 @@ function DayEvents() {
     // ];
 
 
-    const dispatch = useDispatch();
+    // const dispatch = useDispatch();
     const { events } = useSelector(state => state.events);
     // console.log("Events from Redux:", events);
-    const user = JSON.parse(localStorage.getItem("user"));
+    // const user = JSON.parse(localStorage.getItem("user"));
 
     const [selectedDate, setSelectedDate] = useState(dayjs());
 
-    useEffect(() => {
-        if (user && user.uid) {
-            dispatch(fetchEventsByOrganizer(user.uid));
-        } else {
-            "No Events"
-        }
-    }, [dispatch, user]);
+    // useEffect(() => {
+    //     if (user && user.uid) {
+    //         dispatch(fetchEventsByOrganizer(user.uid));
+    //     } else {
+    //         "No Events"
+    //     }
+    // }, [dispatch, user]);
 
     return (
         <div className="flex flex-col md:flex-row  gap-4 w-full">
@@ -63,7 +63,8 @@ function DayEvents() {
             />
 
             <DashboardCalendar
-                class="flex-1 bg-gray-100 p-4"
+                events={events}
+                // class="flex-1 bg-gray-100 p-4"
                 selectedDate={selectedDate}
                 setSelectedDate={setSelectedDate}
             />

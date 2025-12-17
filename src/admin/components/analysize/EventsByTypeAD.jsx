@@ -1,6 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip } from "recharts";
 
-export default function EventsByType({ data = [] }) {
+export default function EventsByTypeAD({ data = [] }) {
     if (!data.length) {
         data = [
             { name: "No Data", value: 100, color: "#e5e7eb" }
@@ -43,7 +43,8 @@ export default function EventsByType({ data = [] }) {
                             <Cell key={index} fill={entry.color} />
                         ))}
                     </Pie>
-                    <Tooltip formatter={(value) => `${value.toLocaleString()} EGP`}
+                    <Tooltip
+                        formatter={(value) => `${value.toLocaleString()} EGP`}
                         contentStyle={{
                             backgroundColor: "transparent",
                             border: 0,

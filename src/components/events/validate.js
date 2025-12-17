@@ -1,7 +1,19 @@
 
-export default function validate(form, categories) {
+export default function validate(form, categories, rows) {
      let e={};
 //  const [errors, setErrors] = useState({});
+
+// if (!form.venueId) {
+//   e.address = "Choose venue first";
+//   e.totalTickets = "Choose venue first";
+//   e.priceA = "Choose venue first";
+// }
+if (form.mode === "offline" && !form.venueId) {
+   e.totalTickets = "Choose venue first";
+  e.priceA = "Choose venue first";
+}
+
+
 //event name
     if (!form.eventName || !form.eventName.trim()) {
     e.eventName = "Required";
@@ -53,13 +65,22 @@ else if (!categories.includes(form.type)) {
 
 
   // Ticket prices
-  ["priceA", "priceB", "priceC", "priceD"].forEach((key) => {
-    if (!form[key] || form[key] === "") {
-      e[key] = "Required";
-    } else if (Number(form[key]) < 0) {
-      e[key] = "Cannot be negative";
+if (!rows || rows.length === 0) {
+  e.price = "No ticket rows found";
+} else {
+  rows.forEach(row => {
+    const value = form[`price${row}`];
+
+    if (value === "" || value === undefined) {
+      e[`price${row}`] = "Required";
+    } else if (Number(value) < 0) {
+      e[`price${row}`] = "Cannot be negative";
     }
   });
+}
+
+
+
 
   // Image url
  if (!form.photo || !form.photo.trim()) {
