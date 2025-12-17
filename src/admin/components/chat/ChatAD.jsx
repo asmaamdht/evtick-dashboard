@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { db } from "../../../firebase/firebase.config";
 import {
     collection,
@@ -12,6 +12,8 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { FiSmile, FiPaperclip } from "react-icons/fi";
 import EmojiPicker from "emoji-picker-react";
 import { useSelector } from "react-redux";
+import { where, doc, setDoc } from "firebase/firestore";
+
 
 const storage = getStorage();
 
@@ -20,18 +22,37 @@ export default function ChatAD() {
 
 
     const [usersList, setUsersList] = useState([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const filteredUsers = usersList.filter((user) => {
+        const keyword = searchTerm.toLowerCase();
+        return (
+            user.fullName?.toLowerCase().includes(keyword) ||
+            user.email?.toLowerCase().includes(keyword)
+        );
+    });
+
     const [selectedUser, setSelectedUser] = useState(null);
 
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const [file, setFile] = useState(null);
     const [showEmoji, setShowEmoji] = useState(false);
+    const messagesEndRef = useRef(null);
+
+
+
 
     useEffect(() => {
-        const unsub = onSnapshot(collection(db, "messages"), (snapshot) => {
-            let users = [];
-            snapshot.forEach((d) => users.push({ id: d.id, ...d.data() }));
+        const q = query(
+            collection(db, "users"),
+            where("role", "==", "organizer")
+        );
 
+        const unsub = onSnapshot(q, (snapshot) => {
+            let users = [];
+            snapshot.forEach((d) =>
+                users.push({ id: d.id, ...d.data() })
+            );
             setUsersList(users);
         });
 
@@ -39,11 +60,12 @@ export default function ChatAD() {
     }, []);
 
 
+
     useEffect(() => {
         if (!selectedUser) return;
 
         const q = query(
-            collection(db, "messages", selectedUser.id, "messages"),
+            collection(db, "messages", selectedUser.uid, "messages"),
             orderBy("createdAt")
         );
 
@@ -56,6 +78,13 @@ export default function ChatAD() {
         return () => unsub();
     }, [selectedUser]);
 
+    useEffect(() => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [messages, selectedUser]);
+
+
     const sendMessage = async () => {
         if (!newMessage.trim() && !file) return;
         if (!selectedUser) return;
@@ -64,24 +93,41 @@ export default function ChatAD() {
         let fileName = "";
 
         if (file) {
-            const fileRef = ref(storage, `chatFiles/${selectedUser.id}/${file.name}`);
+            const fileRef = ref(storage, `chatFiles/${selectedUser.uid}/${file.name}`);
             await uploadBytes(fileRef, file);
             fileUrl = await getDownloadURL(fileRef);
             fileName = file.name;
         }
 
-        await addDoc(collection(db, "messages", selectedUser.id, "messages"), {
-            text: newMessage,
-            senderId: "admin",
-            senderAvatar: currentUser?.profilePic,
-            fileUrl,
-            fileName,
-            createdAt: serverTimestamp(),
-        });
+        await addDoc(
+            collection(db, "messages", selectedUser.uid, "messages"),
+            {
+                text: newMessage || "",
+                senderId: "admin",
+                senderAvatar:
+                    currentUser?.profilePic ??
+                    "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                fileUrl: fileUrl || "",
+                fileName: fileName || "",
+                createdAt: serverTimestamp(),
+            }
+        );
+        await setDoc(
+            doc(db, "messages", selectedUser.uid),
+            {
+                name: selectedUser.fullName,
+                avatar: selectedUser.profilePic || "",
+                lastActive: serverTimestamp(),
+                uid: selectedUser.uid,
+            },
+            { merge: true }
+        );
 
         setNewMessage("");
         setFile(null);
+
     };
+
 
     const formatTime = (timestamp) => {
         if (!timestamp) return "";
@@ -90,66 +136,100 @@ export default function ChatAD() {
     };
 
     return (
-        <div className="flex h-[600px] bg-white rounded-xl shadow-lg overflow-hidden">
+        <div
+            className="flex w-full h-[100dvh] sm:h-[570px] bg-white rounded-none sm:rounded-xl shadow-lg overflow-hidden">
 
-            <div className="w-1/4 border-r p-3 overflow-y-auto">
-                <h3 className="text-lg font-semibold mb-3">Users</h3>
+            {/*USERS LIST */}
+            <div
+                className={`w-full sm:w-1/4 border-r flex flex-col ${selectedUser ? "hidden sm:flex" : "flex"}`}
+            >
+                {/* Header */}
+                <div className="p-3 border-b bg-white">
+                    <h3 className="text-lg font-semibold mb-3">Users</h3>
 
-                {usersList.map((user) => (
-                    <div
-                        key={user.id}
-                        className={`p-2 rounded-lg cursor-pointer mb-2 hover:bg-gray-100 ${selectedUser?.id === user.id ? "bg-gray-200" : ""
-                            }`}
-                        onClick={() => setSelectedUser(user)}
-                    >
-                        <div className="flex items-center gap-3">
-                            <img
-                                src={user.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
-                                className="w-10 h-10 rounded-full"
-                            />
+                    <input
+                        type="text"
+                        placeholder="Search by name or email"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-[#0f9386] outline-none"
+                    />
+                </div>
 
-                            <span className="font-medium">{user.name || user.id}</span>
-
+                {/* Users List */}
+                <div className="flex-1 overflow-y-auto p-3">
+                    {filteredUsers.map((user) => (
+                        <div
+                            key={user.uid}
+                            onClick={() => setSelectedUser(user)}
+                            className={`p-2 mb-2 rounded-lg cursor-pointer hover:bg-gray-100 ${selectedUser?.uid === user.uid ? "bg-gray-200" : ""}`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <img
+                                    src={
+                                        user.profilePic ||
+                                        "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                                    }
+                                    className="w-10 h-10 rounded-full"
+                                />
+                                <span className="font-medium">{user.fullName}</span>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
 
-            <div className="flex-1 flex flex-col">
+            {/* ================= CHAT AREA ================= */}
+            <div
+                className={`flex flex-col w-full sm:flex-1 ${!selectedUser ? "hidden sm:flex" : "flex"}`}
+            >
+
                 {selectedUser ? (
                     <>
-                        <div className="border-b p-3 flex items-center gap-3">
+                        {/* Chat Header */}
+                        <div
+                            className="border-b p-3 flex items-center gap-3 bg-white sticky top-0 z-10">
+
+                            {/* Back button mobile */}
+                            <button
+                                className="sm:hidden text-gray-600 text-lg"
+                                onClick={() => setSelectedUser(null)}
+                            >
+                                ←
+                            </button>
+
                             <img
-                                src={selectedUser.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
+                                src={
+                                    selectedUser.profilePic ||
+                                    "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                                }
                                 className="w-10 h-10 rounded-full"
                             />
-                            <h3 className="font-semibold">{selectedUser.name}</h3>
+                            <h3 className="font-semibold">{selectedUser.fullName}</h3>
                         </div>
 
-
-                        <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                        {/* Messages */}
+                        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
                             {messages.map((msg) => (
                                 <div
                                     key={msg.id}
-                                    className={`flex items-end gap-2 ${msg.senderId === "admin" ? "flex-row-reverse" : "flex-row"
+                                    className={`flex items-end gap-2 ${msg.senderId === "admin"
+                                        ? "flex-row-reverse"
+                                        : "flex-row"
                                         }`}
-
                                 >
-                                    {/* Avatar */}
-                                    <div className="w-10 h-10 rounded-[10px] overflow-hidden bg-white">
+                                    <div className="w-10 h-10 rounded-lg overflow-hidden">
                                         <img
-                                            src={msg.senderAvatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
+                                            src={
+                                                msg.senderAvatar ||
+                                                "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                                            }
                                             className="w-full h-full object-cover"
                                         />
                                     </div>
 
-                                    {/* Message */}
                                     <div
-                                        className={`px-4 py-2 rounded-xl max-w-[70%] text-sm ${msg.senderId === "admin"
-                                            ? "bg-[#0f9386] text-white"
-                                            : "bg-gray-100 text-gray-700"
-                                            }`}
-                                    >
+                                        className={`px-3 sm:px-4 py-2 rounded-xl max-w-[85%] sm:max-w-[70%] text-sm ${msg.senderId === "admin" ? "bg-[#0f9386] text-white" : "bg-gray-100 text-gray-700"}`} >
                                         {msg.text}
 
                                         {msg.fileUrl &&
@@ -157,13 +237,16 @@ export default function ChatAD() {
                                                 <img
                                                     src={msg.fileUrl}
                                                     className="mt-2 rounded-lg max-h-60"
-                                                    alt=""
                                                 />
                                             )}
 
                                         {msg.fileUrl &&
                                             !msg.fileUrl.match(/\.(jpg|jpeg|png|gif)$/i) && (
-                                                <a href={msg.fileUrl} target="_blank" className="underline text-xs block mt-2">
+                                                <a
+                                                    href={msg.fileUrl}
+                                                    target="_blank"
+                                                    className="underline text-xs block mt-2"
+                                                >
                                                     📎 {msg.fileName}
                                                 </a>
                                             )}
@@ -173,48 +256,64 @@ export default function ChatAD() {
                                         </div>
                                     </div>
                                 </div>
-
                             ))}
+                            <div ref={messagesEndRef} />
                         </div>
 
-                        <div className="p-3 border-t flex items-center gap-3 relative">
+                        {/* Input */}
+                        <div className="p-3 border-t flex items-end gap-2 bg-white sticky bottom-0">
                             <button onClick={() => setShowEmoji(!showEmoji)}>
-                                <FiSmile size={22} className="text-gray-600 hover:text-[#0f9386]" />
+                                <FiSmile size={18} className="text-gray-600" />
                             </button>
 
                             <label className="cursor-pointer">
-                                <FiPaperclip size={22} className="text-gray-600 hover:text-[#0f9386]" />
-                                <input type="file" hidden onChange={(e) => setFile(e.target.files[0])} />
+                                <FiPaperclip size={18} className="text-gray-600" />
+                                <input
+                                    type="file"
+                                    hidden
+                                    onChange={(e) => setFile(e.target.files[0])}
+                                />
                             </label>
 
                             {showEmoji && (
-                                <div className="absolute bottom-16 left-0 z-50">
-                                    <EmojiPicker onEmojiClick={(e) => setNewMessage(prev => prev + e.emoji)} />
+                                <div className="fixed bottom-20 left-[80px] sm:left-[300px] z-[9999]">
+                                    <EmojiPicker
+                                        width={300}
+                                        height={350}
+                                        onEmojiClick={(emojiData) =>
+                                            setNewMessage((prev) => prev + emojiData.emoji)
+                                        }
+                                    />
                                 </div>
                             )}
 
-                            <input
-                                type="text"
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
+                            <textarea
+                                rows={1}
                                 placeholder="Type a message..."
-                                className="flex-1 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#0f9386] outline-none"
+                                value={newMessage}
+                                onChange={(e) => {
+                                    setNewMessage(e.target.value);
+                                    e.target.style.height = "auto";
+                                    e.target.style.height = e.target.scrollHeight + "px";
+                                }}
+                                className="flex-1 min-w-0 resize-none overflow-hidden border rounded-2xl px-4 py-2 text-sm sm:text-base focus:ring-2 focus:ring-[#0f9386] outline-none max-h-32"
                             />
 
                             <button
                                 onClick={sendMessage}
-                                className="bg-[#0f9386] text-white px-5 py-2 rounded-lg hover:bg-[#0f8876]"
+                                className="shrink-0 bg-[#0f9386] text-white px-4 py-2 rounded-lg text-sm"
                             >
                                 Send
                             </button>
                         </div>
                     </>
                 ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">
+                    <div className="flex items-center justify-center h-full text-gray-400">
                         Select a user to start chatting
                     </div>
                 )}
             </div>
         </div>
     );
+
 }
