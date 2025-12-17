@@ -11,6 +11,8 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
+
 
   const [errors, setErrors] = useState({
     email: "",
@@ -42,6 +44,7 @@ export default function Login() {
 const handleLogin = async (e) => {
   e.preventDefault();
   if (!validateForm()) return;
+  setLoading(true);
 
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
@@ -78,7 +81,7 @@ const handleLogin = async (e) => {
     localStorage.setItem("user", JSON.stringify(safeUser));
     dispatch(setUser(safeUser));
 
-    // Redirect based on role
+    // redirect based on role
     if (userData.role === "admin") {
       navigate("/admin");
     } else {
@@ -88,6 +91,8 @@ const handleLogin = async (e) => {
   } catch (err) {
     let msg = err.message.replace("Firebase:", "").trim();
     setErrors((prev) => ({ ...prev, firebase: msg }));
+  }finally {
+    setLoading(false);
   }
 };
 
@@ -156,9 +161,18 @@ const handleLogin = async (e) => {
         {/* submit btn*/}
         <button
           type="submit"
+          disabled={loading}
           className="w-full py-3 bg-[#0f9386] text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition"
         >
-          Sign in
+           {loading ? (
+    <div className="flex items-center justify-center gap-2">
+      <span className="w-5 h-5 border-2 border-white/60 border-t-white rounded-full animate-spin"></span>
+      Signing in...
+    </div>
+  ) : (
+    "Sign in"
+  )}
+          {/* Sign in */}
         </button>
 
       </form>

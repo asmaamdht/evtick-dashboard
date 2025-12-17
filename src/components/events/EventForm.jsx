@@ -1,8 +1,5 @@
 import DatePicker from "react-datepicker";
-//import "react-datepicker/dist/react-datepicker.css";
 import Textarea from "./Textarea";
-import { useParams } from "react-router-dom";
-//import DatePicker from "react-datepicker";
 import Datetime from "react-datetime";
 import dayjs from "dayjs";
 import "react-datetime/css/react-datetime.css";
@@ -13,10 +10,12 @@ export default function EventForm({
   errors,
   update,
   save,
+  loading,
   categories,
 
   showSuggestions,
   setShowSuggestions,
+  categoryRef,
 
   venues,
   filteredVenues,
@@ -24,39 +23,29 @@ export default function EventForm({
   selectVenue,
   showVenueSuggestions,
   setShowVenueSuggestions,
+  venueRef,
 
   rows,
   bookedDates
 }) {
-  
-  const { eventId } = useParams();
-
 
    return (<div className="max-w-6xl ">  
-       <h2 className=" text-2xl font-bold mb-6">{eventId?"Edit Event":"Create Event"}</h2>
+      
+       <h2 className=" text-2xl font-bold mb-6">Create Event</h2>
        <div className="p-3">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-  {/* LEFT: takes 2/3 of the row */}
+  {/* LEFT */}
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:col-span-2 p-3 shadow border bg-white rounded-xl">
         <Field label="Event Name" value={form.eventName} onChange={v=>update("eventName",v)} error={errors.eventName}/>
         
         {/* type and auto suggest */}
-        <div className="relative">
+        <div className="relative" ref={categoryRef}>
           <Field label="Category" value={form.type}
             onChange={v=>{update("type",v);setShowSuggestions(true)}} 
             onFocus={()=>setShowSuggestions(true)} error={errors.type}
           />
   
-          {/* {showSuggestions && form.type && (
-            <div className="absolute w-full bg-white border shadow-lg z-40 rounded max-h-36 overflow-y-auto"
-                 onMouseLeave={()=>setShowSuggestions(false)}>
-              {categories.filter(c => c.toLowerCase().startsWith(form.type.toLowerCase())).map((c,i)=>(
-                <p key={i} onClick={()=>{update("type",c);setShowSuggestions(false)}} 
-                   className="px-3 py-2 hover:bg-gray-100 cursor-pointer">{c}</p>
-              ))}
-            </div>
-          )} */}
           {showSuggestions && (
           <div
             className="absolute w-full bg-white border shadow-lg z-40 rounded max-h-36 overflow-y-auto"
@@ -88,12 +77,12 @@ export default function EventForm({
             <Radio
           label="Online"
           checked={form.mode==="online"}
-          onChange={eventId ? undefined : () => update("mode","online")}
+          onChange={() => update("mode","online")}
           />
 
           <Radio label="Offline" 
           checked={form.mode==="offline"} 
-          onChange={eventId ? undefined : ()=>update("mode","offline")}/>
+          onChange={()=>update("mode","offline")}/>
         </div>
         {/* </div> */}
         </div>
@@ -133,7 +122,7 @@ export default function EventForm({
   />
   {errors.photo && <p className="text-xs text-red-500 mt-1">{errors.photo}</p>}
 
-  {/* Designated image box */}
+  {/* image box */}
   <div className="mt-3 w-full h-52 bg-gray-100 rounded-xl shadow flex items-center justify-center overflow-hidden">
     {form.photo ? (
       <img src={form.photo} alt="Event" className="w-full h-full object-cover rounded-xl" />
@@ -153,14 +142,13 @@ export default function EventForm({
  <div className="grid grid-cols-2 gap-4 mt-4">
  <div className="shadow border p-3 bg-white rounded-xl ">
   {form.mode === "offline" ? (
-    <div className="relative">
+    <div className="relative" ref={venueRef}>
       <Field
         label="Venue"
         value={form.address}
-        onChange={eventId ? undefined : onVenueSearch}
+        onChange={onVenueSearch}
         error={errors.address}
-        onFocus={() => !eventId && setShowVenueSuggestions(true)}
-        disabled={!!eventId}
+        onFocus={() => setShowVenueSuggestions(true)}
       />
 
       {showVenueSuggestions && (
@@ -208,8 +196,7 @@ export default function EventForm({
   type="date"
   label="Event Date"
   value={form.date}
-  onChange={eventId ? undefined : v => update("date", v)}
-  disabled={!!eventId}
+  onChange={ v => update("date", v)}
   error={errors.date}
 />
 
@@ -223,7 +210,7 @@ export default function EventForm({
     />
   </div>
   
-  {/* calender and time picker*/}
+  {/* calender and time*/}
   <div className="mt-4 rounded-lg overflow-auto">
     {/* <p className="font-medium mb-2">Select Date & Time</p> */}
     <div className=" rounded-xl border p-3 shadow mt-4 max-w-full">
@@ -243,23 +230,16 @@ export default function EventForm({
     }}
     timeFormat="HH:mm"
     dateFormat="YYYY-MM-DD"
-    input={false}       // keeps it always open
+    input={false}       // always open
    isValidDate={(currentDate) => {
   const day = currentDate.format("YYYY-MM-DD");
 
   // past dates
   if (currentDate.isSameOrBefore(dayjs(), "day")) return false;
 
-  // edit mode: lock everything except the original date
-  if (eventId) {
-    return day === form.date;
-  }
-
   // block booked
   return !bookedDates.includes(day);
 }}
-
-
 
   />
   </div>
@@ -292,26 +272,6 @@ export default function EventForm({
   </div>
   </div>
   
-   {/* total tickets and mode */}
- {/* <div className="grid grid-cols-2 gap-4 mt-4">
-  <div className="shadow border p-3 bg-white rounded-xl ">
-      <Field type="number" 
-      label="Total Tickets" 
-      value={form.totalTickets} 
-     onChange={(v) => update("totalTickets", v)}
-      error={errors.totalTickets}/>
-      </div>
-      <div className="shadow border p-3 bg-white rounded-xl">
-         <div className="grid grid-rows-2 gap-2">
-        <label className="block mt-1">Event Type</label>
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-1">
-          <Radio label="Online"  checked={form.mode==="online"}  onChange={()=>update("mode","online")}/>
-          <Radio label="Offline" checked={form.mode==="offline"} onChange={()=>update("mode","offline")}/>
-        </div>
-        </div>
-        </div>
-  </div> */}
-  
       
       </div>
     </div>
@@ -319,8 +279,16 @@ export default function EventForm({
       <div className="mt-6 flex justify-end">
         <button
           onClick={save}
-          className="  text-white font-bold p-3 rounded-lg hover:bg-teal-700" style={{ background: "#0f9386" }}>
-          {eventId ? "Save Changes" : "Create Event"}
+          className="  text-white font-bold p-3 rounded-lg hover:bg-teal-700" 
+          style={{ background: "#0f9386" }}>
+             {loading ? (
+      <div className="flex items-center justify-center gap-2">
+        <span className="w-5 h-5 border-2 border-white/60 border-t-white rounded-full animate-spin"></span>
+        Creating...
+      </div>
+    ) : (
+      "Create Event"
+    )}
         </button>
   </div>
     </div>

@@ -10,6 +10,8 @@ export default function EventRequestModal({
 }) {
  
   const [refusalReason, setRefusalReason] = useState("");
+  const [refusalReasonError, setRefusalReasonError] = useState("");
+
 
   if (!event) return null;
 
@@ -112,14 +114,20 @@ export default function EventRequestModal({
               rows="3"
               placeholder="Reason for refusal..."
               value={refusalReason}
-              onChange={(e) => setRefusalReason(e.target.value)} >
+              onChange={(e) => {setRefusalReason(e.target.value);
+                 if (refusalReasonError) setRefusalReasonError("");
+              }} >
             </textarea>
+            {refusalReasonError && (
+           <p className="text-xs text-red-500 mb-2">{refusalReasonError}</p>
+           )}
 
             <div className="flex justify-center gap-4">
               <button
                  onClick={() => {
                   setConfirmRefuse(false);
                   setRefusalReason("");
+                   setRefusalReasonError("");
                 }}
                 className="px-4 py-2 border rounded-lg hover:bg-gray-50"
               >
@@ -129,11 +137,12 @@ export default function EventRequestModal({
               <button
                onClick={() => {
                   if (!refusalReason.trim()) {
-                    alert("Please provide a reason for refusal.");
+                    setRefusalReasonError("Please provide a reason for refusal.");
                     return;
                   }
                   onRefuse(refusalReason);
                   setRefusalReason("");
+                  setRefusalReasonError("");
                 }}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
               >

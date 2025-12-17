@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { db } from "../../firebase/firebase.config";
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useSelector } from "react-redux";
 import "react-datepicker/dist/react-datepicker.css";
-import { useParams } from "react-router-dom";
 import validate from "./validate";
 import EventForm from "./EventForm";
 import { showSuccess } from "../../admin/components/events/SweetAlert";
@@ -15,8 +14,7 @@ import dayjs from "dayjs";
 
 export default function CreateOrEditEvent() {
 
-  const { eventId } = useParams();
-  const { currentUser } = useSelector(s => s.auth);
+const { currentUser } = useSelector(s => s.auth);
 
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [venues, setVenues] = useState([]);
@@ -25,17 +23,15 @@ export default function CreateOrEditEvent() {
   const [selectedVenue, setSelectedVenue] = useState(null);
   const [bookedDates, setBookedDates] = useState([]);
   const [rows, setRows] = useState([]);
+ const [loading, setLoading] = useState(false);
+ const [categories, setCategories] = useState([]);
 
 
+const categoryRef = useRef(null);
+const venueRef = useRef(null);
 
 
-  // const [showPicker, setShowPicker] = useState(false);
-  const [errors, setErrors] = useState({});
-  const categories = [
-    "Charity","Entertainment","sports","Tech","Marketing",
-    "Educational","Community","Corporate","School & University"
-  ];
-
+const [errors, setErrors] = useState({});
 
 
  const initialForm = {
@@ -62,41 +58,23 @@ const [form, setForm] = useState(initialForm);
 
   const update=(k,v)=>setForm(p=>({...p,[k]:v}));
 
-  // load event data if editing
-useEffect(() => {
-  if (!eventId) return; // only run if editing
-
-  const loadEvent = async () => {
-    const snap = await getDoc(doc(db, "events", eventId));
-    if (snap.exists()) {
-      const d = snap.data();
-
-      const prices = {};
-      if (d.price) {
-        Object.keys(d.price).forEach(k => {
-          prices[`price${k}`] = d.price[k] || "";
-        });
-      }
-
-      setForm({
-        eventName: d.eventName || "",
-        type: d.type || "",
-        address: d.mode === "offline" ? d.venue?.name || "" : d.address || "",
-        // date: d.date ? d.date.toDate().toISOString().split("T")[0] : "",
-        // time: d.date ? d.date.toDate().toISOString().slice(11,16) : "",
-        date: d.date ? dayjs(d.date.toDate()).format("YYYY-MM-DD") : "",
-        time: d.date ? dayjs(d.date.toDate()).format("HH:mm") : "",
-        description: d.description || "",
-        totalTickets: d.totalTickets || "",
-        photo: d.photo || "",
-        mode: d.mode || "offline",
-       ...prices,
-      });
+  //load categories
+  useEffect(() => {
+  const loadCategories = async () => {
+    try {
+      const snap = await getDocs(collection(db, "eventTypes"));
+      const list = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+      setCategories(list.map(c => c.id));
+    } catch (err) {
+      console.error("Failed to load categories:", err);
     }
-  }
+  };
+  loadCategories();
+}, []);
 
-  loadEvent();
-}, [eventId]);
 
 useEffect(() => {
   const loadVenues = async () => {
@@ -183,11 +161,10 @@ useEffect(() => {
 
 
 useEffect(() => {
-  // reset feilds in these cases
+  // reset feilds between online and offline
   if (
     !form.date ||
-    form.mode !== "offline" ||
-    eventId // edit mode, don't refilter
+    form.mode !== "offline" 
   ) {
     setFilteredVenues(venues);
     return;
@@ -216,7 +193,7 @@ useEffect(() => {
   };
 
   filterVenuesByDate();
-}, [form.date, form.mode, venues, eventId]);
+}, [form.date, form.mode, venues]);
 
 
 
@@ -275,11 +252,11 @@ useEffect(() => {
   setErrors(errors);
   if (Object.keys(errors).length !== 0) return;
 
+  setLoading(true);
+
+   try {
     const fullDate=new Date(`${form.date}T${form.time}`);
-    // const ref = doc(db,"events",eventId || crypto.randomUUID());
-    const ref = eventId
-    ? doc(db, "events", eventId)
-    : doc(db, "pendingEvents", crypto.randomUUID());
+    const ref = doc(db, "pendingEvents", crypto.randomUUID());
 
     const venuePayload = form.mode === "offline" && selectedVenue
   ? {
@@ -292,10 +269,18 @@ useEffect(() => {
     }
   : {};
 
- const pricePayload = {};
-rows.forEach(row => {
-  pricePayload[row] = Number(form[`price${row}`]);
-});
+
+let pricePayload;
+if (form.mode === "online") {
+  // single price, saved as number
+  pricePayload = Number(form.priceA);
+} else {
+  // offline: map per row
+  pricePayload = {};
+  rows.forEach(row => {
+    pricePayload[row] = Number(form[`price${row}`]);
+  });
+}
 
 
 
@@ -320,40 +305,66 @@ rows.forEach(row => {
 };
 
 
-    if (eventId) {
-  await updateDoc(ref, payload);
-} else {
   await setDoc(ref, {
     ...payload,
-    createdAt: serverTimestamp(), //only when creating
+    createdAt: serverTimestamp(), 
   });
   setForm(initialForm); // reset form after creation
-}
-    // eventId ? await updateDoc(ref,payload) : await setDoc(ref,payload);
-    // alert(eventId?"Updated Successfully":"Admin will review your request");
-    showSuccess(eventId?"Updated Successfully":"Admin will review your request");
+
+     showSuccess("Admin will review your request");
+    } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false); 
+  }
   };
 
-  
+  // close category dropdown when clicking outside
+useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (categoryRef.current && !categoryRef.current.contains(e.target)) {
+      setShowSuggestions(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, [setShowSuggestions]);
+
+// close venue dropdown when clicking outside
+useEffect(() => {
+  const handleClickOutside = (e) => {
+    if (venueRef.current && !venueRef.current.contains(e.target)) {
+      setShowVenueSuggestions(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, [setShowVenueSuggestions]);
+
 return (
     <EventForm
   form={form}
   errors={errors}
   update={update}
   save={save}
+  loading={loading}
   categories={categories}
 
-  /* category autosuggest */
+  /* category and autosuggest */
   showSuggestions={showSuggestions}
   setShowSuggestions={setShowSuggestions}
+  categoryRef={categoryRef}
 
-  /* venue logic */
+  /* venue */
   venues={venues}
   filteredVenues={filteredVenues}
   onVenueSearch={onVenueSearch}
   selectVenue={selectVenue}
   showVenueSuggestions={showVenueSuggestions}
   setShowVenueSuggestions={setShowVenueSuggestions}
+  venueRef={venueRef}
 
   /* seating / booking */
   rows={rows}
