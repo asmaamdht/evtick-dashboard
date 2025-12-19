@@ -26,7 +26,7 @@ export default function EventRequestModal({
           {/* event image */}
           <img
             src={event.photo}
-            className="w-full h-60 object-cover rounded-lg shadow mb-6"
+            className="w-full  h-60 object-cover rounded-lg shadow mb-6"
             alt=""
           />
 
@@ -57,7 +57,7 @@ export default function EventRequestModal({
           </div>
 
            {/* description */}
-          <div className="mt-6">
+          <div className="mt-6 w-[400px] md:w-[600px]">
             <h3 className="font-semibold mb-2">Description</h3>
             <div className="border shadow p-2 text-gray-700 whitespace-pre-line">
               {event.description}
@@ -170,7 +170,7 @@ function Info({ label, value }) {
   return (
     <div >
       <p className="text-gray-500 text-xs mb-1">{label}</p>
-      <div className="font-medium p-2 border shadow">{value}</div>
+      <div className="font-medium p-2 border shadow truncate">{value}</div>
     </div>
   );
 }
