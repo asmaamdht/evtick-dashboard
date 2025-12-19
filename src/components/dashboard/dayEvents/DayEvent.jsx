@@ -48,9 +48,9 @@ const DayEvent = ({ events = [], selectedDate }) => {
                                         className="w-full h-full object-cover"
                                     />
 
-                                    {e.createdAt && (
+                                    {e.date  && (
                                         <span className="absolute top-2 left-2 bg-black/50 text-white text-[11px] px-2 py-1 rounded-md backdrop-blur-sm">
-                                            {dayjs(e.createdAt).format("MMMM DD, YYYY • hh:mm A")}
+                                            {dayjs(e.date).format("MMMM DD, YYYY • hh:mm A")}
                                         </span>
                                     )}
 
