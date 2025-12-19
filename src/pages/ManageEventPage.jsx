@@ -52,6 +52,7 @@ export default function ManageEvents() {
     mode: "offline",
     date: "",
     totalTickets: "",
+    price: "", // For online events - single number
   });
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -152,10 +153,12 @@ export default function ManageEvents() {
     const newForm = { ...eventData };
 
     if (event.mode === "online") {
-      // Online event
+      // Online event - price is a single number
       newForm.address = event.address || "";
-      setRows(["A"]); // Single price for online events
-      newForm.priceA = event.price?.A?.toString() || "";
+      // Check if price is a number or object (for backward compatibility)
+      newForm.price = typeof event.price === 'number' 
+        ? event.price.toString() 
+        : (event.price?.A?.toString() || "");
     } else {
       // Offline event - IMPORTANT: Set the venue that was already selected
       if (event.venue?.id) {
@@ -208,8 +211,14 @@ export default function ManageEvents() {
     if (!form.date.trim()) errors.push("Date is required");
     if (!form.type.trim()) errors.push("Event type is required");
 
-    if (form.mode === "online" && !form.address.trim()) {
-      errors.push("Online address/URL is required");
+    if (form.mode === "online") {
+      if (!form.address.trim()) {
+        errors.push("Online address/URL is required");
+      }
+      // Validate single price for online events
+      if (!form.price || isNaN(form.price) || Number(form.price) < 0) {
+        errors.push("Price must be a valid number");
+      }
     }
 
     if (form.mode === "offline" && !selectedVenue) {
@@ -224,14 +233,16 @@ export default function ManageEvents() {
       errors.push("Total tickets must be a positive number");
     }
 
-    // Validate all price fields
-    rows.forEach((row) => {
-      const priceKey = `price${row}`;
-      const price = form[priceKey];
-      if (!price || isNaN(price) || Number(price) < 0) {
-        errors.push(`Price for row ${row} must be a valid number`);
-      }
-    });
+    // Validate price fields for offline events
+    if (form.mode === "offline") {
+      rows.forEach((row) => {
+        const priceKey = `price${row}`;
+        const price = form[priceKey];
+        if (!price || isNaN(price) || Number(price) < 0) {
+          errors.push(`Price for row ${row} must be a valid number`);
+        }
+      });
+    }
 
     return errors.length > 0 ? errors.join("\n") : null;
   };
@@ -244,13 +255,6 @@ export default function ManageEvents() {
     }
 
     try {
-      // Build price object dynamically
-      const pricePayload = {};
-      rows.forEach((row) => {
-        const priceKey = `price${row}`;
-        pricePayload[row] = Number(form[priceKey]) || 0;
-      });
-
       // Prepare update data
       const updateData = {
         eventName: form.eventName.trim(),
@@ -260,14 +264,22 @@ export default function ManageEvents() {
         mode: form.mode,
         date: new Date(form.date),
         totalTickets: Number(form.totalTickets),
-        price: pricePayload,
       };
 
       // Add mode-specific data
       if (form.mode === "online") {
+        // Online event: price is a single number
+        updateData.price = Number(form.price);
         updateData.address = form.address.trim();
         updateData.venue = null; // Clear venue for online events
       } else {
+        // Offline event: price is a map of row -> price
+        const pricePayload = {};
+        rows.forEach((row) => {
+          const priceKey = `price${row}`;
+          pricePayload[row] = Number(form[priceKey]) || 0;
+        });
+        updateData.price = pricePayload;
         updateData.address = selectedVenue?.name || "";
         if (selectedVenue) {
           updateData.venue = {
@@ -333,7 +345,7 @@ export default function ManageEvents() {
 
     // Clear all existing price fields first
     Object.keys(newForm).forEach((key) => {
-      if (key.startsWith("price")) {
+      if (key.startsWith("price") && key !== "price") {
         delete newForm[key];
       }
     });
@@ -369,18 +381,18 @@ export default function ManageEvents() {
     if (mode === "online") {
       // Clear venue-related data
       setSelectedVenue(null);
-      setRows(["A"]); // Single price row for online
+      setRows([]); // No rows for online events
 
-      // Clear old price fields
+      // Clear old price fields (row-based prices)
       Object.keys(newForm).forEach((key) => {
-        if (key.startsWith("price") && key !== "priceA") {
+        if (key.startsWith("price") && key !== "price") {
           delete newForm[key];
         }
       });
 
-      // Initialize priceA if not exists
-      if (!newForm.priceA) {
-        newForm.priceA = "";
+      // Initialize single price field if not exists
+      if (!newForm.price) {
+        newForm.price = "";
       }
 
       // Reset address to empty for online input
@@ -389,9 +401,12 @@ export default function ManageEvents() {
       // Offline mode - reset rows and clear prices
       setRows([]);
 
-      // Clear all price fields
+      // Clear single price field
+      newForm.price = "";
+
+      // Clear all row-based price fields
       Object.keys(newForm).forEach((key) => {
-        if (key.startsWith("price")) {
+        if (key.startsWith("price") && key !== "price") {
           delete newForm[key];
         }
       });
@@ -408,7 +423,7 @@ export default function ManageEvents() {
     }));
   };
 
-  // Update price field
+  // Update price field (for offline events with rows)
   const updatePriceField = (row, value) => {
     const priceKey = `price${row}`;
     setForm((prev) => ({
@@ -461,19 +476,19 @@ export default function ManageEvents() {
       <h2 className="text-3xl font-bold mb-8 text-[#111]">Manage Events</h2>
 
       {/* SEARCH & TYPE FILTER */}
-      <div className="flex flex-wrap gap-4 mb-6 items-center">
-        <div className="flex items-center gap-2 bg-white border rounded-xl px-3 py-2 w-full md:w-72">
+      <div className="flex flex-wrap w-full bg-white rounded-lg p-2 gap-4 mb-6 items-center">
+        <div className="flex items-center flex-1 gap-2 bg-gray-100 border rounded-xl px-3 py-2 w-full md:w-72">
           <Search size={18} className="text-teal-600" />
           <input
             placeholder="Search by name"
-            className="outline-none w-full"
+            className="outline-none w-full bg-gray-100"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
         <select
-          className="border rounded-xl px-3 py-2 w-full md:w-72"
+          className="border rounded-xl flex-1 px-3 py-2 w-full bg-gray-100 md:w-72"
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
         >
@@ -497,7 +512,7 @@ export default function ManageEvents() {
                 <img
                   src={event.photo}
                   alt={event.eventName}
-                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                  className="w-full  object-cover transform group-hover:scale-105 transition-transform duration-300"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
@@ -525,18 +540,16 @@ export default function ManageEvents() {
               <div className="text-gray-500 text-sm flex items-center gap-2 mb-2">
                 <FaTicketAlt /> {event.type} • {event.mode}
               </div>
-              <div className="text-gray-500 text-sm flex items-center gap-2 mb-2">
-                <FaUser /> {event.eventOwner || "Unknown"}
-              </div>
               <div className="text-gray-500 text-sm mb-2">
                 Tickets: {event.totalTickets || 0} total •{" "}
                 {event.ticketsSold || 0} sold
               </div>
+            
 
-              <div className="flex flex-wrap gap-2 mt-4">
+              <div className="flex justify-between gap-2 mt-4">
                 <button
                   onClick={() => handleEditClick(event)}
-                  className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-xl w-full sm:w-auto justify-center"
+                  className="flex flex-1 items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-xl w-full sm:w-auto justify-center"
                 >
                   <Pencil size={16} /> Edit
                 </button>
@@ -552,7 +565,7 @@ export default function ManageEvents() {
                   <button
                     onClick={goToStream}
                     className="flex items-center gap-2 bg-blue-100 hover:bg-blue-200 px-3 py-2 rounded-xl text-blue-600 w-full sm:w-auto justify-center"
-                  >
+                >
                     <Play size={18} /> Stream
                   </button>
                 )}
@@ -675,15 +688,34 @@ export default function ManageEvents() {
 
               {/* Mode-specific fields */}
               {form.mode === "online" ? (
-                <div>
-                  <label className="font-semibold">Online Address/URL </label>
-                  <input
-                    className="border p-3 rounded-xl w-full"
-                    value={form.address}
-                    onChange={(e) => updateFormField("address", e.target.value)}
-                    placeholder="e.g., Zoom link, YouTube URL, website"
-                  />
-                </div>
+                <>
+                  <div>
+                    <label className="font-semibold">Online Address/URL </label>
+                    <input
+                      className="border p-3 rounded-xl w-full"
+                      value={form.address}
+                      onChange={(e) => updateFormField("address", e.target.value)}
+                      placeholder="e.g., Zoom link, YouTube URL, website"
+                    />
+                  </div>
+                  
+                  {/* Single Price for Online Events */}
+                  <div>
+                    <label className="font-semibold">Ticket Price </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="border p-3 rounded-xl w-full"
+                      value={form.price}
+                      onChange={(e) => updateFormField("price", e.target.value)}
+                      placeholder="0.00"
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      Price per ticket
+                    </p>
+                  </div>
+                </>
               ) : (
                 <div>
                   <label className="font-semibold">Venue </label>
@@ -735,15 +767,15 @@ export default function ManageEvents() {
                 </select>
               </div>
 
-              {/* Dynamic Price Fields */}
-              {rows.length > 0 && (
+              {/* Dynamic Price Fields for Offline Events */}
+              {form.mode === "offline" && rows.length > 0 && (
                 <div className="border-t pt-4">
-                  <label className="font-semibold">Ticket Prices </label>
+                  <label className="font-semibold">Ticket Prices by Row </label>
                   <div className="grid grid-cols-2 gap-3 mt-2">
                     {rows.map((row) => (
                       <div key={row} className="bg-gray-50 p-3 rounded-lg">
                         <label className="font-medium block mb-1">
-                          Price "{row}"
+                          Row "{row}"
                         </label>
                         <input
                           type="number"
