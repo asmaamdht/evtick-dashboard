@@ -11,6 +11,8 @@ export default function ForgotPassword() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const normalizedEmail = email.trim().toLowerCase();
+
   const isValidEmail = (value) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
@@ -29,7 +31,6 @@ export default function ForgotPassword() {
 
   setLoading(true);
 
-   const normalizedEmail = email.trim().toLowerCase();
 
     try {
       //check if email exists in Firestore

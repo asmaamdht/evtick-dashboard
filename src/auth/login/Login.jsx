@@ -59,7 +59,7 @@ const handleLogin = async (e) => {
     if (!userData.role || !["admin", "organizer"].includes(userData.role)) {
       setErrors((prev) => ({
         ...prev,
-        firebase: "You are not authorized to access this system.",
+        firebase: "Invalid email and password.",
       }));
 
       // Logout
