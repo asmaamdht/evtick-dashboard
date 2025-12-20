@@ -11,7 +11,7 @@ import {
 import { Pencil, Trash2, Search } from "lucide-react";
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
 import { FaMapMarkerAlt, FaCalendarAlt, FaTicketAlt } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FaUser } from "react-icons/fa";
 
 const EVENT_TYPES = [
@@ -36,7 +36,9 @@ export default function ManageEvents() {
   const [selectedVenue, setSelectedVenue] = useState(null);
   const [loadingSeats, setLoadingSeats] = useState(false);
 
-  const [search, setSearch] = useState("");
+  // const [search, setSearch] = useState("");
+  const location = useLocation();
+  const [search, setSearch] = useState(location.state?.searchEventsADPage || "");
   const [filterType, setFilterType] = useState("");
   const [filterOnline, setFilterOnline] = useState(""); // Online/Offline filter
   const [currentPage, setCurrentPage] = useState(1);
@@ -602,11 +604,10 @@ export default function ManageEvents() {
                 <button
                   key={pageNum}
                   onClick={() => setCurrentPage(pageNum)}
-                  className={`w-10 h-10 rounded-lg font-semibold transition-all duration-200 ${
-                    currentPage === pageNum
-                      ? "bg-teal-600 text-white border-2 border-teal-400 shadow-lg scale-110"
-                      : "bg-white/70 backdrop-blur-sm text-teal-700 border border-teal-300 hover:bg-white"
-                  }`}
+                  className={`w-10 h-10 rounded-lg font-semibold transition-all duration-200 ${currentPage === pageNum
+                    ? "bg-teal-600 text-white border-2 border-teal-400 shadow-lg scale-110"
+                    : "bg-white/70 backdrop-blur-sm text-teal-700 border border-teal-300 hover:bg-white"
+                    }`}
                 >
                   {pageNum}
                 </button>

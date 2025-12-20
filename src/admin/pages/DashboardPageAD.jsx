@@ -36,7 +36,7 @@ function DashboardPageAD() {
     <div className="p-2 flex flex-col lg:flex-row gap-6">
 
       {/* Analytisc Card */}
-      <div className="flex flex-col gap-4 flex-shrink-0 ">
+      <div className="flex flex-col gap-4 flex-shrink-0 w-full lg:w-[620px] ">
         <AnalyticsCardAD />
 
         {/* Event Calendar & Chart Top Events Profit */}

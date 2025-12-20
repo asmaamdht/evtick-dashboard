@@ -4,14 +4,21 @@ import { useDispatch } from "react-redux";
 import { fetchAllEvents } from "../../../../redux/slices/eventSlice";
 import dayjs from "dayjs";
 import { AiOutlineClockCircle } from "react-icons/ai";
-
+import { getAllCheckouts } from "../../../../redux/slices/checkoutSlice/checkoutThunks";
+import { useNavigate } from "react-router-dom";
 
 function TodaysEvents({ selectedDate }) {
     const events = useSelector((state) => state.events.events);
     const dispatch = useDispatch();
+    const checkouts = useSelector((state) => state.checkouts?.checkouts) || [];
+    const navigate = useNavigate();
+
+
+
 
     useEffect(() => {
         dispatch(fetchAllEvents());
+        dispatch(getAllCheckouts());
     }, [dispatch]);
 
     const today = new Date();
@@ -47,15 +54,37 @@ function TodaysEvents({ selectedDate }) {
     });
 
     // Calculate Profit ::
-    const Commission = 0.10;
+
+    // const getEventProfit = (event) => {
+    //     if (!event.bookedSeats || !event.price) return 0;
+
+    //     return event.bookedSeats.reduce((sum, seat) => {
+    //         const seatPrice = event.price[seat.row] || 0;
+    //         return sum + seatPrice * Commission;
+    //     }, 0);
+    // };
+
+    const Commission = 0.05;
 
     const getEventProfit = (event) => {
-        if (!event.bookedSeats || !event.price) return 0;
+        let profit = 0;
 
-        return event.bookedSeats.reduce((sum, seat) => {
-            const seatPrice = event.price[seat.row] || 0;
-            return sum + seatPrice * Commission;
-        }, 0);
+        if (checkouts && checkouts.length > 0) {
+            const eventCheckouts = checkouts.filter(c => c.eventId === event.id);
+
+            profit = eventCheckouts.reduce((sum, checkout) => {
+                return sum + (Number(checkout.serviceFee) || 0);
+            }, 0);
+        }
+
+        if (profit === 0 && event.bookedSeats && event.bookedSeats.length > 0 && event.price) {
+            profit = event.bookedSeats.reduce((sum, seat) => {
+                const seatPrice = event.price[seat.row] || 0;
+                return sum + seatPrice * Commission;
+            }, 0);
+        }
+
+        return profit;
     };
 
     const totalProfit = filteredEvents.reduce(
@@ -76,6 +105,8 @@ function TodaysEvents({ selectedDate }) {
                     return (
                         <div
                             key={event.id}
+                            onClick={() => navigate("/admin/manage-events", { state: { searchEventsADPage: event.eventName } })}
+
                             className="flex flex-col p-3 rounded-xl bg-white shadow-sm"
                         >
                             <div className="flex gap-4 items-center">
@@ -92,7 +123,7 @@ function TodaysEvents({ selectedDate }) {
                                         </h3>
 
                                         <span className="text-xs font-bold text-gray-600  bg-gray-100 px-2 py-2 rounded-lg">
-                                            PlatformFee : {Commission * 100}%
+                                            PlatformFee : 5%
                                         </span>
                                     </div>
                                     <p className="flex items-center gap-1 text-sm text-gray-400">
@@ -106,14 +137,14 @@ function TodaysEvents({ selectedDate }) {
                                             <p>
                                                 TicketsSold:
                                                 <span className="font-semibold text-gray-800 ml-1">
-                                                    {event.bookedSeats?.length || 0}
+                                                    {event.ticketsSold}
                                                 </span>
                                             </p>
 
                                             <p>
                                                 TotalTickets:
                                                 <span className="font-semibold text-gray-800 ml-1">
-                                                    {event.totalTickets}
+                                                    {event.totalTickets - event.ticketsSold}
                                                 </span>
                                             </p>
                                         </div>
@@ -122,11 +153,6 @@ function TodaysEvents({ selectedDate }) {
                                             {profit.toLocaleString()}EGP
                                         </p>
                                     </div>
-
-
-
-
-
                                 </div>
                             </div>
                         </div>

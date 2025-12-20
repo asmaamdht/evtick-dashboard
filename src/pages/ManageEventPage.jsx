@@ -11,6 +11,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { Pencil, Trash2, Play, Search } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
 import { FaMapMarkerAlt, FaCalendarAlt, FaTicketAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -38,7 +39,9 @@ export default function ManageEvents() {
   const [selectedVenue, setSelectedVenue] = useState(null);
   const [loadingSeats, setLoadingSeats] = useState(false);
 
-  const [search, setSearch] = useState("");
+  // const [search, setSearch] = useState("");
+  const location = useLocation();
+  const [search, setSearch] = useState(location.state?.searchEvent || "");
   const [typeFilter, setTypeFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -527,8 +530,8 @@ export default function ManageEvents() {
                 <FaCalendarAlt />{" "}
                 {event?.date
                   ? new Date(
-                      event.date.toDate ? event.date.toDate() : event.date
-                    ).toLocaleString()
+                    event.date.toDate ? event.date.toDate() : event.date
+                  ).toLocaleString()
                   : "No date"}
               </div>
               <div className="text-gray-500 text-sm flex items-center gap-2 mb-1">
@@ -581,11 +584,10 @@ export default function ManageEvents() {
           <button
             key={i}
             onClick={() => setCurrentPage(i + 1)}
-            className={`px-4 py-2 rounded-xl ${
-              currentPage === i + 1
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-black"
-            }`}
+            className={`px-4 py-2 rounded-xl ${currentPage === i + 1
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200 text-black"
+              }`}
           >
             {i + 1}
           </button>
