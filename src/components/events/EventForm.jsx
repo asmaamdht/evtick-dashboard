@@ -199,7 +199,9 @@ export default function EventForm({
   value={form.date}
   onChange={ v => update("date", v)}
   error={errors.date}
+  disabled
 />
+
 
   
     <Field
