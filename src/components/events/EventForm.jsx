@@ -29,7 +29,8 @@ export default function EventForm({
   bookedDates
 }) {
 
-   return (<div className="max-w-6xl ">  
+   return (
+     <div className=" ">  
       
        <h2 className=" text-2xl font-bold mb-6">Create Event</h2>
        <div className="p-3">
@@ -123,7 +124,7 @@ export default function EventForm({
   {errors.photo && <p className="text-xs text-red-500 mt-1">{errors.photo}</p>}
 
   {/* image box */}
-  <div className="mt-3 w-full h-52 bg-gray-100 rounded-xl shadow flex items-center justify-center overflow-hidden">
+  <div className="mt-3 w-full h-64 bg-gray-100 rounded-xl shadow flex items-center justify-center overflow-hidden">
     {form.photo ? (
       <img src={form.photo} alt="Event" className="w-full h-full object-cover rounded-xl" />
     ) : (
