@@ -6,6 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import { setUser } from "../authSlice";
+ import { showLoginSuccess } from "../../admin/components/events/SweetAlert.jsx";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -58,7 +59,7 @@ const handleLogin = async (e) => {
     if (!userData.role || !["admin", "organizer"].includes(userData.role)) {
       setErrors((prev) => ({
         ...prev,
-        firebase: "You are not authorized to access this system.",
+        firebase: "Invalid email and password.",
       }));
 
       // Logout
@@ -80,7 +81,7 @@ const handleLogin = async (e) => {
 
     localStorage.setItem("user", JSON.stringify(safeUser));
     dispatch(setUser(safeUser));
-
+      showLoginSuccess("You Have Successfully logged in!", userData.fullName || "User");
     // redirect based on role
     if (userData.role === "admin") {
       navigate("/admin");
@@ -88,8 +89,24 @@ const handleLogin = async (e) => {
       navigate("/dashboard");
     }
 
-  } catch (err) {
-    let msg = err.message.replace("Firebase:", "").trim();
+   }catch (err) {
+  let msg = "";
+
+  switch (err.code) {
+    case "auth/invalid-email":
+      msg = "Invalid email address.";
+      break;
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+      case "auth/invalid-credential":
+      msg = "Wrong email or password.";
+      break;
+    case "auth/too-many-requests":
+      msg = "Too many attempts. Try again later.";
+      break;
+    default:
+      msg = "Something went wrong. Please try again later.";
+  }
     setErrors((prev) => ({ ...prev, firebase: msg }));
   }finally {
     setLoading(false);
