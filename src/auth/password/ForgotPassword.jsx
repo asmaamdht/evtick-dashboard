@@ -11,9 +11,23 @@ export default function ForgotPassword() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const isValidEmail = (value) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
   const handleReset = async (e) => {
     e.preventDefault();
-    setLoading(true);
+
+    if (!normalizedEmail) {
+    setMessage("Please enter your email.");
+    return;
+  }
+
+  if (!isValidEmail(normalizedEmail)) {
+    setMessage("Invalid email address.");
+    return;
+  }
+
+  setLoading(true);
 
    const normalizedEmail = email.trim().toLowerCase();
 
@@ -26,7 +40,7 @@ export default function ForgotPassword() {
       const snap = await getDocs(q);
 
       if (snap.empty) {
-        setMessage("Wrong Email.");
+        setMessage("If this email exists, a reset link will be sent.");
         return;
       }
 
@@ -36,7 +50,7 @@ export default function ForgotPassword() {
         handleCodeInApp: true,
       });
 
-      setMessage("Password reset link sent! Check your email.");
+      setMessage("If this email exists, a reset link will be sent!");
     } catch (error) {
       const code = error?.code || "";
       if (code === "auth/invalid-email") setMessage("Invalid email address.");
