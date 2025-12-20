@@ -23,3 +23,20 @@ export const getOrganizerCheckouts = createAsyncThunk(
         }
     }
 );
+
+
+export const getAllCheckouts = createAsyncThunk(
+    "checkouts/getAll",
+    async () => {
+        try {
+            const querySnapshot = await getDocs(collection(db, "checkouts"));
+            const checkouts = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+            return checkouts;
+        } catch (error) {
+            return (error.message);
+        }
+    }
+);

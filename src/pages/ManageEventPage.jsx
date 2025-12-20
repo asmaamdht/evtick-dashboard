@@ -11,7 +11,7 @@ import {
 } from "firebase/firestore";
 
 import { Pencil, Trash2, Play, Search } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const EVENT_TYPES = [
   "Sports",
@@ -31,7 +31,9 @@ export default function ManageEvents() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
-  const [search, setSearch] = useState("");
+  // const [search, setSearch] = useState("");
+  const location = useLocation();
+  const [search, setSearch] = useState(location.state?.searchEvent || "");
   const [typeFilter, setTypeFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -140,16 +142,16 @@ export default function ManageEvents() {
       prev.map((e) =>
         e.id === editEvent
           ? {
-              ...e,
-              ...form,
-              date: new Date(form.date),
-              price: {
-                A: form.priceA,
-                B: form.priceB,
-                C: form.priceC,
-                D: form.priceD,
-              },
-            }
+            ...e,
+            ...form,
+            date: new Date(form.date),
+            price: {
+              A: form.priceA,
+              B: form.priceB,
+              C: form.priceC,
+              D: form.priceD,
+            },
+          }
           : e
       )
     );
@@ -239,8 +241,8 @@ export default function ManageEvents() {
                 📅{" "}
                 {event?.date
                   ? new Date(
-                      event.date.toDate ? event.date.toDate() : event.date
-                    ).toLocaleString()
+                    event.date.toDate ? event.date.toDate() : event.date
+                  ).toLocaleString()
                   : "No date"}
               </p>
               <p className="text-gray-500 text-sm mb-1">📍 {event.address}</p>
@@ -281,11 +283,10 @@ export default function ManageEvents() {
           <button
             key={i}
             onClick={() => setCurrentPage(i + 1)}
-            className={`px-4 py-2 rounded-xl ${
-              currentPage === i + 1
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-black"
-            }`}
+            className={`px-4 py-2 rounded-xl ${currentPage === i + 1
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200 text-black"
+              }`}
           >
             {i + 1}
           </button>

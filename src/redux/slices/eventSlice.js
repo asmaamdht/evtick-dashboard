@@ -13,7 +13,6 @@ export const fetchAllEvents = createAsyncThunk(
 );
 
 
-
 // --- Fetch event types ---
 export const fetchEventTypes = createAsyncThunk(
   "events/fetchEventTypes",
@@ -325,7 +324,7 @@ const eventSlice = createSlice({
       .addCase(fetchUserTickets.rejected, (state, action) => {
         state.loadingTickets = false;
         state.errorTickets = action.error.message;
-      });
+      })
   },
 });
 

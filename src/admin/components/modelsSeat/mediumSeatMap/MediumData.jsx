@@ -1,43 +1,34 @@
-// EventsSeatMap.jsx
 import React from "react";
 import MediumSeatMap from "./MediumSeatMap";
 
 export default function MediumData({ selectedEvent }) {
-    const rows = ["A", "B", "C", "D", "E", "F", "G"];
-    const seatsPerRow = 12;
-
-    const priceMap = selectedEvent?.price || {};
-
-    const theaterSeatMap = {};
-    rows.forEach(row => {
-        for (let i = 1; i <= seatsPerRow; i++) {
-            const seatId = `${row}${i}`;
-            theaterSeatMap[seatId] = null;
-        }
-    });
-
-    let displaySeatMap = { ...theaterSeatMap };
+    const seatMapData = {};
     let totalPrice = 0;
 
-    if (selectedEvent) {
-        const bookedSeats = selectedEvent.bookedSeats || [];
-        const totalSeats = Object.keys(theaterSeatMap).length;
-
-        bookedSeats.forEach(s => {
-            const seatId = `${s.row}${s.seat}`;
-            displaySeatMap[seatId] = true;
-            totalPrice += priceMap[s.row] || 0;
+    if (selectedEvent?.seats) {
+        selectedEvent.seats.forEach(seat => {
+            seatMapData[seat.id] = null;
         });
 
+        const bookedSeats = selectedEvent.bookedSeats || [];
+        bookedSeats.forEach(s => {
+            const seatId = `${s.row}${s.seat}`;
+            if (Object.prototype.hasOwnProperty.call(seatMapData, seatId)) {
+                seatMapData[seatId] = true;
+                totalPrice += selectedEvent.price?.[s.row] || 0;
+            }
+        });
+
+        const totalSeats = selectedEvent.seats.length;
         const unavailableSeatsCount = totalSeats - (selectedEvent.totalTickets || totalSeats);
         if (unavailableSeatsCount > 0) {
-            Object.keys(displaySeatMap).reverse().forEach(seatId => {
-                if (displaySeatMap[seatId] === null && unavailableSeatsCount > 0) {
-                    displaySeatMap[seatId] = false;
+            Object.keys(seatMapData).reverse().forEach(seatId => {
+                if (seatMapData[seatId] === null && unavailableSeatsCount > 0) {
+                    seatMapData[seatId] = false;
                 }
             });
         }
     }
 
-    return <MediumSeatMap seatMap={displaySeatMap} totalPrice={totalPrice} />;
+    return <MediumSeatMap seatMap={seatMapData} totalPrice={totalPrice} />;
 }

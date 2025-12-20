@@ -10,7 +10,7 @@ import {
 import { Pencil, Trash2, Play, Search } from "lucide-react";
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
 import { FaMapMarkerAlt, FaCalendarAlt, FaTicketAlt } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FaUser } from "react-icons/fa";
 
 const EVENT_TYPES = [
@@ -31,7 +31,9 @@ export default function ManageEvents() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
-  const [search, setSearch] = useState("");
+  // const [search, setSearch] = useState("");
+  const location = useLocation();
+  const [search, setSearch] = useState(location.state?.searchEventsADPage || "");
   const [filterType, setFilterType] = useState("");
   const [filterOnline, setFilterOnline] = useState(""); // Online/Offline filter
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,12 +81,12 @@ export default function ManageEvents() {
       isOnline: event.isOnline || false,
       date: event.date?.toDate
         ? (() => {
-            const d = event.date.toDate();
-            const tzOffset = d.getTimezoneOffset(); // minutes
-            return new Date(d.getTime() - tzOffset * 60000)
-              .toISOString()
-              .slice(0, 16);
-          })()
+          const d = event.date.toDate();
+          const tzOffset = d.getTimezoneOffset(); // minutes
+          return new Date(d.getTime() - tzOffset * 60000)
+            .toISOString()
+            .slice(0, 16);
+        })()
         : "",
       totalTickets: event.totalTickets || "",
       priceA: event.price?.A || "",
@@ -140,16 +142,16 @@ export default function ManageEvents() {
       prev.map((e) =>
         e.id === editEvent
           ? {
-              ...e,
-              ...form,
-              date: new Date(form.date),
-              price: {
-                A: form.priceA,
-                B: form.priceB,
-                C: form.priceC,
-                D: form.priceD,
-              },
-            }
+            ...e,
+            ...form,
+            date: new Date(form.date),
+            price: {
+              A: form.priceA,
+              B: form.priceB,
+              C: form.priceC,
+              D: form.priceD,
+            },
+          }
           : e
       )
     );
@@ -179,8 +181,8 @@ export default function ManageEvents() {
       filterOnline === ""
         ? true
         : filterOnline === "online"
-        ? e.isOnline
-        : !e.isOnline;
+          ? e.isOnline
+          : !e.isOnline;
     return matchesName && matchesType && matchesOnline;
   });
 
@@ -337,11 +339,10 @@ export default function ManageEvents() {
                 <button
                   key={pageNum}
                   onClick={() => setCurrentPage(pageNum)}
-                  className={`w-10 h-10 rounded-lg font-semibold transition-all duration-200 ${
-                    currentPage === pageNum
-                      ? "bg-teal-600 text-white border-2 border-teal-400 shadow-lg scale-110"
-                      : "bg-white/70 backdrop-blur-sm text-teal-700 border border-teal-300 hover:bg-white"
-                  }`}
+                  className={`w-10 h-10 rounded-lg font-semibold transition-all duration-200 ${currentPage === pageNum
+                    ? "bg-teal-600 text-white border-2 border-teal-400 shadow-lg scale-110"
+                    : "bg-white/70 backdrop-blur-sm text-teal-700 border border-teal-300 hover:bg-white"
+                    }`}
                 >
                   {pageNum}
                 </button>

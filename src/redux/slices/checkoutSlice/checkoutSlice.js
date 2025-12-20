@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getOrganizerCheckouts } from "./checkoutThunks";
+import { getOrganizerCheckouts, getAllCheckouts } from "./checkoutThunks";
 
 const initialState = {
     checkouts: [],
@@ -22,6 +22,20 @@ const checkoutsSlice = createSlice({
                 state.checkouts = action.payload;
             })
             .addCase(getOrganizerCheckouts.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+
+            // GetAllCheckouts
+            .addCase(getAllCheckouts.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(getAllCheckouts.fulfilled, (state, action) => {
+                state.loading = false;
+                state.checkouts = action.payload;
+            })
+            .addCase(getAllCheckouts.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             });

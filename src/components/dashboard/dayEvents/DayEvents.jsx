@@ -1,11 +1,10 @@
-import React, { useState } from "react";
-import dayjs from "dayjs";
+import React from "react";
 import DayEvent from "./DayEvent";
 import { useSelector } from "react-redux";
 // import { fetchEventsByOrganizer } from "../../../redux/slices/eventSlice";
 import DashboardCalendar from "./DashboardCalender";
 
-function DayEvents() {
+function DayEvents({ selectedDate, setSelectedDate }) {
 
     // const mockEvents = [
     //     {
@@ -43,8 +42,6 @@ function DayEvents() {
     const { events } = useSelector(state => state.events);
     // console.log("Events from Redux:", events);
     // const user = JSON.parse(localStorage.getItem("user"));
-
-    const [selectedDate, setSelectedDate] = useState(dayjs());
 
     // useEffect(() => {
     //     if (user && user.uid) {
