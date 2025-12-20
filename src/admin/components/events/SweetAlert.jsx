@@ -35,3 +35,17 @@ export const showConfirm = async (message) => {
     cancelButtonText: "No",
   });
 };
+
+export const showLoginSuccess = (message = "You have successfully logged in!", name) => {
+  Swal.fire({
+    title: `Welcome Back ${name}`,
+    text: message,
+    icon: "success",
+    iconColor: "#0F9386",
+    background: "#fff",
+    color: "#333",
+    showConfirmButton: false,
+    timer: 2500,
+    timerProgressBar: true,
+  });
+};

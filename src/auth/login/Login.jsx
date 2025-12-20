@@ -6,11 +6,14 @@ import { useNavigate, Link } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import { setUser } from "../authSlice";
+ import { showLoginSuccess } from "../../admin/components/events/SweetAlert.jsx";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
+
 
   const [errors, setErrors] = useState({
     email: "",
@@ -42,6 +45,7 @@ export default function Login() {
 const handleLogin = async (e) => {
   e.preventDefault();
   if (!validateForm()) return;
+  setLoading(true);
 
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
@@ -55,7 +59,7 @@ const handleLogin = async (e) => {
     if (!userData.role || !["admin", "organizer"].includes(userData.role)) {
       setErrors((prev) => ({
         ...prev,
-        firebase: "You are not authorized to access this system.",
+        firebase: "Invalid email and password.",
       }));
 
       // Logout
@@ -77,17 +81,35 @@ const handleLogin = async (e) => {
 
     localStorage.setItem("user", JSON.stringify(safeUser));
     dispatch(setUser(safeUser));
-
-    // Redirect based on role
+      showLoginSuccess("You Have Successfully logged in!", userData.fullName || "User");
+    // redirect based on role
     if (userData.role === "admin") {
       navigate("/admin");
     } else {
       navigate("/dashboard");
     }
 
-  } catch (err) {
-    let msg = err.message.replace("Firebase:", "").trim();
+   }catch (err) {
+  let msg = "";
+
+  switch (err.code) {
+    case "auth/invalid-email":
+      msg = "Invalid email address.";
+      break;
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+      case "auth/invalid-credential":
+      msg = "Wrong email or password.";
+      break;
+    case "auth/too-many-requests":
+      msg = "Too many attempts. Try again later.";
+      break;
+    default:
+      msg = "Something went wrong. Please try again later.";
+  }
     setErrors((prev) => ({ ...prev, firebase: msg }));
+  }finally {
+    setLoading(false);
   }
 };
 
@@ -156,9 +178,18 @@ const handleLogin = async (e) => {
         {/* submit btn*/}
         <button
           type="submit"
+          disabled={loading}
           className="w-full py-3 bg-[#0f9386] text-white font-semibold rounded-lg shadow-md hover:opacity-90 transition"
         >
-          Sign in
+           {loading ? (
+    <div className="flex items-center justify-center gap-2">
+      <span className="w-5 h-5 border-2 border-white/60 border-t-white rounded-full animate-spin"></span>
+      Signing in...
+    </div>
+  ) : (
+    "Sign in"
+  )}
+          {/* Sign in */}
         </button>
 
       </form>

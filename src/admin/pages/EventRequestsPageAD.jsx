@@ -237,7 +237,7 @@ const approveEvent = async () => {
       {/* <div className="flex flex-col lg:flex-row md:items-center md:justify-between gap-4 mb-6"> */}
          <div className="flex flex-col p-6 md:items-start md:justify-start gap-4 mb-6">
 
-        <h1 className="text-3xl font-bold">Pending Event Requests</h1>
+        {/* <h1 className="text-3xl font-bold">Pending Event Requests</h1> */}
 
   <div className="w-full flex md:justify-start mt-5">
       <Filters

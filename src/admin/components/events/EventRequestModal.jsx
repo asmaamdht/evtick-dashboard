@@ -10,6 +10,8 @@ export default function EventRequestModal({
 }) {
  
   const [refusalReason, setRefusalReason] = useState("");
+  const [refusalReasonError, setRefusalReasonError] = useState("");
+
 
   if (!event) return null;
 
@@ -24,7 +26,7 @@ export default function EventRequestModal({
           {/* event image */}
           <img
             src={event.photo}
-            className="w-full h-60 object-cover rounded-lg shadow mb-6"
+            className="w-full  h-60 object-cover rounded-lg shadow mb-6"
             alt=""
           />
 
@@ -55,7 +57,7 @@ export default function EventRequestModal({
           </div>
 
            {/* description */}
-          <div className="mt-6">
+          <div className="mt-6 w-[400px] md:w-[600px]">
             <h3 className="font-semibold mb-2">Description</h3>
             <div className="border shadow p-2 text-gray-700 whitespace-pre-line">
               {event.description}
@@ -65,12 +67,21 @@ export default function EventRequestModal({
           {/* prices*/}
           <div className="mt-6">
          <h3 className="font-semibold mb-2">Ticket Prices</h3>
+
+          {event.mode === "online" && (
+            <div className="text-sm p-2 border shadow text-gray-700">
+        {event.price} EGP
+        </div>
+        )}
+
+         {event.mode === "offline" && (
         <div className="grid grid-cols-2 gap-3">
        {event.price &&
        Object.keys(event.price).map((row) => (
         <Price key={row} label={row} value={event.price[row]} />
       ))}
   </div>
+  )}
           </div>
 
           {/*btns*/}
@@ -112,14 +123,20 @@ export default function EventRequestModal({
               rows="3"
               placeholder="Reason for refusal..."
               value={refusalReason}
-              onChange={(e) => setRefusalReason(e.target.value)} >
+              onChange={(e) => {setRefusalReason(e.target.value);
+                 if (refusalReasonError) setRefusalReasonError("");
+              }} >
             </textarea>
+            {refusalReasonError && (
+           <p className="text-xs text-red-500 mb-2">{refusalReasonError}</p>
+           )}
 
             <div className="flex justify-center gap-4">
               <button
                  onClick={() => {
                   setConfirmRefuse(false);
                   setRefusalReason("");
+                   setRefusalReasonError("");
                 }}
                 className="px-4 py-2 border rounded-lg hover:bg-gray-50"
               >
@@ -129,11 +146,12 @@ export default function EventRequestModal({
               <button
                onClick={() => {
                   if (!refusalReason.trim()) {
-                    alert("Please provide a reason for refusal.");
+                    setRefusalReasonError("Please provide a reason for refusal.");
                     return;
                   }
                   onRefuse(refusalReason);
                   setRefusalReason("");
+                  setRefusalReasonError("");
                 }}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
               >
@@ -152,7 +170,7 @@ function Info({ label, value }) {
   return (
     <div >
       <p className="text-gray-500 text-xs mb-1">{label}</p>
-      <div className="font-medium p-2 border shadow">{value}</div>
+      <div className="font-medium p-2 border shadow truncate">{value}</div>
     </div>
   );
 }
@@ -161,7 +179,7 @@ function Price({ label, value }) {
   return (
     <div className="p-3 bg-gray-100 rounded-lg text-center">
       <p className="font-bold text-lg">{label}</p>
-      <div className="text-sm py-2 border shadow text-gray-700">{value} egp</div>
+      <div className="text-sm py-2 border shadow text-gray-700">{value} EGP</div>
     </div>
   );
 }
