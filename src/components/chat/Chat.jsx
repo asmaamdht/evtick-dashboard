@@ -52,16 +52,7 @@ export default function UserChat() {
     const sendMessage = async () => {
         if (!newMessage.trim() && !file) return;
 
-        // await setDoc(
-        //     doc(db, "messages", userId),
-        //     {
-        //         name: currentUser?.fullName || currentUser?.name || "",
-        //         avatar: currentUser?.profilePic || "",
-        //         lastActive: serverTimestamp()
-        //     },
-        //     { merge: true }
-        // );
-
+    
         await setDoc(
             doc(db, "messages", userId),
             {

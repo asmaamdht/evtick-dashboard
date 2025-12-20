@@ -125,23 +125,13 @@ export default function ChatAD() {
                 createdAt: serverTimestamp(),
             }
         );
-        // await setDoc(
-        //     doc(db, "messages", selectedUser.uid),
-        //     {
-        //         name: selectedUser.fullName,
-        //         avatar: selectedUser.profilePic || "",
-        //         lastActive: serverTimestamp(),
-        //         uid: selectedUser.uid,
-        //     },
-        //     { merge: true }
-        // );
-
+   
         await setDoc(
             doc(db, "messages", selectedUser.uid),
             {
                 lastMessage: newMessage || "📎 File",
                 lastMessageAt: serverTimestamp(),
-                unreadForAdmin: false, // الادمن هو اللي باعت
+                unreadForAdmin: false, 
             },
             { merge: true }
         );
@@ -158,7 +148,7 @@ export default function ChatAD() {
         const date = timestamp.toDate();
         return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     };
-    // 1️⃣ merge organizers + chats
+    // merge organizers + chats
 const mergedUsers = organizers.map((org) => {
     const chat = chats.find((c) => c.uid === org.uid);
 
@@ -174,7 +164,7 @@ const mergedUsers = organizers.map((org) => {
     };
 });
 
-// 2️⃣ sort users
+// sort users
 const sortedUsers = [...mergedUsers].sort((a, b) => {
     if (a.lastMessageAt && b.lastMessageAt) {
         return b.lastMessageAt.toMillis() - a.lastMessageAt.toMillis();
@@ -184,7 +174,7 @@ const sortedUsers = [...mergedUsers].sort((a, b) => {
     return a.name.localeCompare(b.name);
 });
 
-// 3️⃣ filter (search)
+// filter (search)
 const filteredUsers = sortedUsers.filter((user) => {
     const keyword = searchTerm.toLowerCase();
     return (
@@ -217,31 +207,13 @@ const filteredUsers = sortedUsers.filter((user) => {
 
                 {/* Users List */}
                 <div className="flex-1 overflow-y-auto p-3">
-                    {/* {filteredUsers.map((user) => (
-                        <div
-                            key={user.uid}
-                            onClick={() => setSelectedUser(user)}
-                            className={`p-2 mb-2 rounded-lg cursor-pointer hover:bg-gray-100 ${selectedUser?.uid === user.uid ? "bg-gray-200" : ""}`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <img
-                                    src={
-                                        user.profilePic ||
-                                        "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                                    }
-                                    className="w-10 h-10 rounded-full"
-                                />
-                                <span className="font-medium">{user.fullName}</span>
-                            </div>
-                        </div>
-                    ))} */}
+                  
                     {filteredUsers.map((user) => (
                         <div
                             key={user.uid}
                             onClick={() => {
                                 setSelectedUser(user);
 
-                                // لما الادمن يفتح الشات => تتقري
                                 setDoc(
                                     doc(db, "messages", user.uid),
                                     { unreadForAdmin: false },
@@ -263,7 +235,7 @@ const filteredUsers = sortedUsers.filter((user) => {
                                 </div>
                             </div>
 
-                            {/* 🔴 Unread badge */}
+                            {/* Unread badge */}
                             {user.unreadForAdmin && (
                                 <span className="w-3 h-3 bg-red-500 rounded-full"></span>
                             )}
@@ -273,7 +245,7 @@ const filteredUsers = sortedUsers.filter((user) => {
                 </div>
             </div>
 
-            {/* ================= CHAT AREA ================= */}
+            {/*CHAT AREA */}
             <div
                 className={`flex flex-col w-full sm:flex-1 ${!selectedUser ? "hidden sm:flex" : "flex"}`}
             >
