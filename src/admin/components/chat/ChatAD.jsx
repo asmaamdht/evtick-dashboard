@@ -194,7 +194,7 @@ const filteredUsers = sortedUsers.filter((user) => {
             >
                 {/* Header */}
                 <div className="p-3 border-b bg-white">
-                    <h3 className="text-lg font-semibold mb-3">Users</h3>
+                    <h3 className="text-lg font-semibold mb-3">Organizers</h3>
 
                     <input
                         type="text"

@@ -27,7 +27,7 @@ export default function SidebarRight() {
             <div className="px-4 grid grid-cols-2 gap-4">
                 <SidebarButton to="create-event" icon={<AiOutlineDashboard />} label="Create Events" />
                 <SidebarButton to="manage-events" icon={<AiOutlineCalendar />} label="Manage Events" />
-                <SidebarButton to="tickets" icon={<AiOutlineCreditCard />} label="Tickets" />
+                <SidebarButton to="tickets" icon={<AiOutlineCreditCard />} label="EvTick AI" />
                 <SidebarButton to="analysize" icon={<AiOutlineBarChart />} label="analysize" />
                 <SidebarButton to="attendance" icon={<AiOutlineTeam />} label="Visitors" />
 

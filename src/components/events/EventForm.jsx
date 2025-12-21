@@ -32,7 +32,7 @@ export default function EventForm({
    return (
      <div className=" ">  
       
-       <h2 className=" text-2xl font-bold mb-6">Create Event</h2>
+      
        <div className="p-3">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
@@ -210,6 +210,7 @@ export default function EventForm({
       value={form.time}
       onChange={(v) => update("time", v)}
       error={errors.time}
+      disabled
     />
   </div>
   

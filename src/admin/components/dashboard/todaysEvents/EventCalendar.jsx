@@ -60,9 +60,8 @@ const EventCalendar = ({ selectedDate, setSelectedDate }) => {
 
                     // Check Days ::
                     const hasEvent = dayObj && events?.some(event => {
-                        const eventStart = dayjs(event.createdAt?.toDate());
-                        const eventEnd = dayjs(event.date?.toDate());
-                        return dayObj.isSame(eventStart, "day") || (dayObj.isAfter(eventStart, "day") && dayObj.isBefore(eventEnd, "day"));
+                       const eventDate = dayjs(event.date?.toDate());
+                        return dayObj.isSame(eventDate, "day");
                     });
 
 
@@ -79,7 +78,7 @@ const EventCalendar = ({ selectedDate, setSelectedDate }) => {
                                     : ""
                                 }
                                 `}
-                            onClick={() => hasEvent && setSelectedDate(dayObj)}
+                            onClick={() => hasEvent && setSelectedDate(dayObj.toDate())}
                         >
                             {day || ""}
                         </div>
