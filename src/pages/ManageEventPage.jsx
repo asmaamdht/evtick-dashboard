@@ -12,9 +12,9 @@ import {
 } from "firebase/firestore";
 import { Pencil, Trash2, Play, Search } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { showError, showSuccess } from "../admin/components/events/SweetAlert";
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
 import { FaMapMarkerAlt, FaCalendarAlt, FaTicketAlt } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
 import { FaUser } from "react-icons/fa";
 
 const EVENT_TYPES = [
@@ -38,6 +38,7 @@ export default function ManageEvents() {
   const [rows, setRows] = useState([]);
   const [selectedVenue, setSelectedVenue] = useState(null);
   const [loadingSeats, setLoadingSeats] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // const [search, setSearch] = useState("");
   const location = useLocation();
@@ -159,8 +160,8 @@ export default function ManageEvents() {
       // Online event - price is a single number
       newForm.address = event.address || "";
       // Check if price is a number or object (for backward compatibility)
-      newForm.price = typeof event.price === 'number' 
-        ? event.price.toString() 
+      newForm.price = typeof event.price === 'number'
+        ? event.price.toString()
         : (event.price?.A?.toString() || "");
     } else {
       // Offline event - IMPORTANT: Set the venue that was already selected
@@ -210,41 +211,58 @@ export default function ManageEvents() {
   const validateForm = () => {
     const errors = [];
 
-    if (!form.eventName.trim()) errors.push("Event name is required");
-    if (!form.date.trim()) errors.push("Date is required");
-    if (!form.type.trim()) errors.push("Event type is required");
+    // Mandatory textual fields
+    if (!form.eventName || !form.eventName.trim()) errors.push("Event name is required");
+    if (!form.description || !form.description.trim()) errors.push("Description is required");
+    if (!form.photo || !form.photo.trim()) errors.push("Photo URL is required");
+    if (!form.type || !form.type.trim()) errors.push("Event type is required");
+    if (!form.date || !form.date.trim()) errors.push("Date is required");
 
+    // Online specific validation
     if (form.mode === "online") {
-      if (!form.address.trim()) {
+      if (!form.address || !form.address.trim()) {
         errors.push("Online address/URL is required");
       }
-      // Validate single price for online events
-      if (!form.price || isNaN(form.price) || Number(form.price) < 0) {
-        errors.push("Price must be a valid number");
+      // Strict number check for price
+      if (form.price === "" || form.price === null || isNaN(Number(form.price)) || Number(form.price) < 0) {
+        errors.push("Price must be a valid non-negative number");
       }
     }
 
-    if (form.mode === "offline" && !selectedVenue) {
-      errors.push("Please select a venue");
+    // Offline specific validation
+    if (form.mode === "offline") {
+      if (!selectedVenue) {
+        errors.push("Please select a venue");
+      }
+
+      // Strict number check for row prices
+      rows.forEach((row) => {
+        const priceKey = `price${row}`;
+        const price = form[priceKey];
+        if (price === "" || price === undefined || isNaN(Number(price)) || Number(price) < 0) {
+          errors.push(`Price for row ${row} must be a valid non-negative number`);
+        }
+      });
     }
 
+    // Total tickets validation
     if (
-      !form.totalTickets ||
-      isNaN(form.totalTickets) ||
+      form.totalTickets === "" ||
+      form.totalTickets === null ||
+      isNaN(Number(form.totalTickets)) ||
       Number(form.totalTickets) <= 0
     ) {
       errors.push("Total tickets must be a positive number");
     }
 
-    // Validate price fields for offline events
-    if (form.mode === "offline") {
-      rows.forEach((row) => {
-        const priceKey = `price${row}`;
-        const price = form[priceKey];
-        if (!price || isNaN(price) || Number(price) < 0) {
-          errors.push(`Price for row ${row} must be a valid number`);
-        }
-      });
+    // Date & Time validation
+    if (form.date) {
+      const selectedDate = new Date(form.date);
+      const now = new Date();
+      // Strict check: selected time cannot be in the past
+      if (selectedDate < now) {
+        errors.push("Cannot select a past date or time");
+      }
     }
 
     return errors.length > 0 ? errors.join("\n") : null;
@@ -253,36 +271,37 @@ export default function ManageEvents() {
   const handleSave = async () => {
     const error = validateForm();
     if (error) {
-      alert(error);
+      showError(error);
       return;
     }
 
     try {
-      // Prepare update data
+      setLoading(true);
+
+      const pricePayload = {};
+      if (form.mode === "offline") {
+        rows.forEach((row) => {
+          const priceKey = `price${row}`;
+          pricePayload[row] = Number(form[priceKey]) || 0;
+        });
+      }
+
       const updateData = {
         eventName: form.eventName.trim(),
         description: form.description.trim(),
         photo: form.photo.trim(),
         type: form.type,
         mode: form.mode,
-        date: new Date(form.date),
+        date: new Date(form.date), // Convert string to Date
         totalTickets: Number(form.totalTickets),
+        price: pricePayload,
       };
 
-      // Add mode-specific data
       if (form.mode === "online") {
-        // Online event: price is a single number
         updateData.price = Number(form.price);
         updateData.address = form.address.trim();
-        updateData.venue = null; // Clear venue for online events
+        updateData.venue = null;
       } else {
-        // Offline event: price is a map of row -> price
-        const pricePayload = {};
-        rows.forEach((row) => {
-          const priceKey = `price${row}`;
-          pricePayload[row] = Number(form[priceKey]) || 0;
-        });
-        updateData.price = pricePayload;
         updateData.address = selectedVenue?.name || "";
         if (selectedVenue) {
           updateData.venue = {
@@ -297,28 +316,28 @@ export default function ManageEvents() {
       }
 
       const ref = doc(db, "events", editEvent);
+      /*
+      // If updating a sub-collection for organizer
+      // user.uid should be available from context or auth
+      // But assuming direct events update like AD for now or consistent with existing logic
+      */
       await updateDoc(ref, updateData);
 
-      // Update local state
       setEvents((prev) =>
         prev.map((e) =>
-          e.id === editEvent
-            ? {
-                ...e,
-                ...updateData,
-              }
-            : e
+          e.id === editEvent ? { ...e, ...updateData } : e
         )
       );
 
-      // Reset form
       setEditEvent(null);
       setRows([]);
       setSelectedVenue(null);
-      alert("Event updated successfully!");
+      showSuccess("Event updated successfully!");
     } catch (error) {
       console.error("Error updating event:", error);
-      alert("Failed to update event. Please try again.");
+      showError("Failed to update event");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -445,10 +464,10 @@ export default function ManageEvents() {
     try {
       await deleteDoc(doc(db, "events", deleteId));
       setEvents((prev) => prev.filter((e) => e.id !== deleteId));
-      alert("Event deleted successfully!");
+      showSuccess("Event deleted successfully!");
     } catch (error) {
       console.error("Error deleting event:", error);
-      alert("Failed to delete event. Please try again.");
+      showError("Failed to delete event");
     } finally {
       setShowDeleteConfirm(false);
       setDeleteId(null);
@@ -476,7 +495,7 @@ export default function ManageEvents() {
 
   return (
     <div className="p-6 w-full">
-      <h2 className="text-3xl font-bold mb-8 text-[#111]">Manage Events</h2>
+      
 
       {/* SEARCH & TYPE FILTER */}
       <div className="flex flex-wrap w-full bg-white rounded-lg p-2 gap-4 mb-6 items-center">
@@ -547,7 +566,7 @@ export default function ManageEvents() {
                 Tickets: {event.totalTickets || 0} total •{" "}
                 {event.ticketsSold || 0} sold
               </div>
-            
+
 
               <div className="flex justify-between gap-2 mt-4">
                 <button
@@ -568,7 +587,7 @@ export default function ManageEvents() {
                   <button
                     onClick={goToStream}
                     className="flex items-center gap-2 bg-blue-100 hover:bg-blue-200 px-3 py-2 rounded-xl text-blue-600 w-full sm:w-auto justify-center"
-                >
+                  >
                     <Play size={18} /> Stream
                   </button>
                 )}
@@ -585,7 +604,7 @@ export default function ManageEvents() {
             key={i}
             onClick={() => setCurrentPage(i + 1)}
             className={`px-4 py-2 rounded-xl ${currentPage === i + 1
-              ? "bg-blue-500 text-white"
+              ? "bg-teal-500 text-white"
               : "bg-gray-200 text-black"
               }`}
           >
@@ -700,7 +719,7 @@ export default function ManageEvents() {
                       placeholder="e.g., Zoom link, YouTube URL, website"
                     />
                   </div>
-                  
+
                   {/* Single Price for Online Events */}
                   <div>
                     <label className="font-semibold">Ticket Price </label>
@@ -841,10 +860,11 @@ export default function ManageEvents() {
                 Cancel
               </button>
               <button
-                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl"
+                className={`px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed`}
                 onClick={handleSave}
+                disabled={loading}
               >
-                Save Changes
+                {loading ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>

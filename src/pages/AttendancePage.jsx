@@ -76,7 +76,7 @@ export default function AttendancePage() {
 
   return (
     <div className="">
-      <h1 className="text-2xl font-bold mb-6 text-slate-800">Attendance & Payments</h1>
+    
 
       {/* Filters Section */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-end">

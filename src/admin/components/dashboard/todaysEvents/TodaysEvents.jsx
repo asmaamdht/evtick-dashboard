@@ -4,13 +4,13 @@ import { useDispatch } from "react-redux";
 import { fetchAllEvents } from "../../../../redux/slices/eventSlice";
 import dayjs from "dayjs";
 import { AiOutlineClockCircle } from "react-icons/ai";
-import { getAllCheckouts } from "../../../../redux/slices/checkoutSlice/checkoutThunks";
+import { fetchAllPayments } from "../../../../redux/slices/paymentSlice";
 import { useNavigate } from "react-router-dom";
 
 function TodaysEvents({ selectedDate }) {
     const events = useSelector((state) => state.events.events);
     const dispatch = useDispatch();
-    const checkouts = useSelector((state) => state.checkouts?.checkouts) || [];
+    const { allPayments } = useSelector((state) => state.payment);
     const navigate = useNavigate();
 
 
@@ -18,7 +18,7 @@ function TodaysEvents({ selectedDate }) {
 
     useEffect(() => {
         dispatch(fetchAllEvents());
-        dispatch(getAllCheckouts());
+        dispatch(fetchAllPayments());
     }, [dispatch]);
 
     const today = new Date();
@@ -36,7 +36,12 @@ function TodaysEvents({ selectedDate }) {
             // selected Date 
             const selected = new Date(selectedDate);
             selected.setHours(0, 0, 0, 0);
-            return selected >= createdAt && selected <= endDate;
+
+            // Check if items are on the same day
+            const eventDay = event.date.toDate();
+            eventDay.setHours(0, 0, 0, 0);
+
+            return selected.getTime() === eventDay.getTime();
         }
 
 
@@ -55,28 +60,20 @@ function TodaysEvents({ selectedDate }) {
 
     // Calculate Profit ::
 
-    // const getEventProfit = (event) => {
-    //     if (!event.bookedSeats || !event.price) return 0;
-
-    //     return event.bookedSeats.reduce((sum, seat) => {
-    //         const seatPrice = event.price[seat.row] || 0;
-    //         return sum + seatPrice * Commission;
-    //     }, 0);
-    // };
-
     const Commission = 0.05;
 
     const getEventProfit = (event) => {
         let profit = 0;
 
-        if (checkouts && checkouts.length > 0) {
-            const eventCheckouts = checkouts.filter(c => c.eventId === event.id);
+        if (allPayments && allPayments.length > 0) {
+            const eventPayments = allPayments.filter(p => p.eventId === event.id);
 
-            profit = eventCheckouts.reduce((sum, checkout) => {
-                return sum + (Number(checkout.serviceFee) || 0);
+            profit = eventPayments.reduce((sum, payment) => {
+                return sum + (Number(payment.serviceFee) || 0);
             }, 0);
         }
 
+        // Fallback or additional logic if needed, but user specifically asked for payment collection serviceFee
         if (profit === 0 && event.bookedSeats && event.bookedSeats.length > 0 && event.price) {
             profit = event.bookedSeats.reduce((sum, seat) => {
                 const seatPrice = event.price[seat.row] || 0;

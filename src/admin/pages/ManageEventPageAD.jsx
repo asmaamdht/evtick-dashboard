@@ -13,6 +13,7 @@ import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
 import { FaMapMarkerAlt, FaCalendarAlt, FaTicketAlt } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaUser } from "react-icons/fa";
+import { showError, showSuccess } from "../components/events/SweetAlert";
 
 const EVENT_TYPES = [
   "Sports",
@@ -35,6 +36,7 @@ export default function ManageEvents() {
   const [rows, setRows] = useState([]);
   const [selectedVenue, setSelectedVenue] = useState(null);
   const [loadingSeats, setLoadingSeats] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // const [search, setSearch] = useState("");
   const location = useLocation();
@@ -56,6 +58,7 @@ export default function ManageEvents() {
     // Prices will be dynamic based on rows
   });
 
+  // eslint-disable-next-line no-unused-vars
   const navigate = useNavigate();
 
   // Fetch venues on mount
@@ -146,8 +149,17 @@ export default function ManageEvents() {
     if (event.mode === "online") {
       // Online event
       newForm.address = event.address || "";
-      setRows(["A"]); // Single price for online events
-      newForm.priceA = event.price?.A?.toString() || "";
+      // Handle price loading: Check if 'price' is a number (new format) or object (old format)
+      if (typeof event.price === 'number') {
+        newForm.price = event.price;
+      } else if (event.price && event.price.A) {
+        newForm.price = event.price.A;
+      } else {
+        newForm.price = "";
+      }
+
+      // For UI consistency in "edit" modal which might check rows for offline
+      setRows([]);
     } else {
       // Offline event - IMPORTANT: Set the venue that was already selected
       if (event.venue?.id) {
@@ -196,34 +208,59 @@ export default function ManageEvents() {
   const validateForm = () => {
     const errors = [];
 
-    if (!form.eventName.trim()) errors.push("Event name is required");
-    if (!form.date.trim()) errors.push("Date is required");
-    if (!form.type.trim()) errors.push("Event type is required");
+    // Mandatory textual fields
+    if (!form.eventName || !form.eventName.trim()) errors.push("Event name is required");
+    if (!form.description || !form.description.trim()) errors.push("Description is required");
+    if (!form.photo || !form.photo.trim()) errors.push("Photo URL is required");
+    if (!form.type || !form.type.trim()) errors.push("Event type is required");
+    if (!form.date || !form.date.trim()) errors.push("Date is required");
 
-    if (form.mode === "online" && !form.address.trim()) {
-      errors.push("Online address/URL is required");
+    // Online specific validation
+    if (form.mode === "online") {
+      if (!form.address || !form.address.trim()) {
+        errors.push("Online address/URL is required");
+      }
+      // Strict number check for price
+      if (form.price === "" || form.price === null || isNaN(Number(form.price)) || Number(form.price) < 0) {
+        errors.push("Price must be a valid non-negative number");
+      }
     }
 
-    if (form.mode === "offline" && !selectedVenue) {
-      errors.push("Please select a venue");
+    // Offline specific validation
+    if (form.mode === "offline") {
+      if (!selectedVenue) {
+        errors.push("Please select a venue");
+      }
+
+      // Strict number check for row prices
+      rows.forEach((row) => {
+        const priceKey = `price${row}`;
+        const price = form[priceKey];
+        if (price === "" || price === undefined || isNaN(Number(price)) || Number(price) < 0) {
+          errors.push(`Price for row ${row} must be a valid non-negative number`);
+        }
+      });
     }
 
+    // Total tickets validation
     if (
-      !form.totalTickets ||
-      isNaN(form.totalTickets) ||
+      form.totalTickets === "" ||
+      form.totalTickets === null ||
+      isNaN(Number(form.totalTickets)) ||
       Number(form.totalTickets) <= 0
     ) {
       errors.push("Total tickets must be a positive number");
     }
 
-    // Validate all price fields
-    rows.forEach((row) => {
-      const priceKey = `price${row}`;
-      const price = form[priceKey];
-      if (!price || isNaN(price) || Number(price) < 0) {
-        errors.push(`Price for row ${row} must be a valid number`);
+    // Date & Time validation
+    if (form.date) {
+      const selectedDate = new Date(form.date);
+      const now = new Date();
+      // Strict check: selected time cannot be in the past
+      if (selectedDate < now) {
+        errors.push("Cannot select a past date or time");
       }
-    });
+    }
 
     return errors.length > 0 ? errors.join("\n") : null;
   };
@@ -231,11 +268,12 @@ export default function ManageEvents() {
   const handleSave = async () => {
     const error = validateForm();
     if (error) {
-      alert(error);
+      showError(error);
       return;
     }
 
     try {
+      setLoading(true);
       // Build price object dynamically
       const pricePayload = {};
       rows.forEach((row) => {
@@ -259,6 +297,7 @@ export default function ManageEvents() {
       if (form.mode === "online") {
         updateData.address = form.address.trim();
         updateData.venue = null; // Clear venue for online events
+        updateData.price = Number(form.price); // Save as number
       } else {
         updateData.address = selectedVenue?.name || "";
         if (selectedVenue) {
@@ -281,9 +320,9 @@ export default function ManageEvents() {
         prev.map((e) =>
           e.id === editEvent
             ? {
-                ...e,
-                ...updateData,
-              }
+              ...e,
+              ...updateData,
+            }
             : e
         )
       );
@@ -292,10 +331,12 @@ export default function ManageEvents() {
       setEditEvent(null);
       setRows([]);
       setSelectedVenue(null);
-      alert("Event updated successfully!");
+      showSuccess("Event updated successfully!");
     } catch (error) {
       console.error("Error updating event:", error);
-      alert("Failed to update event. Please try again.");
+      showError("Failed to update event. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -361,18 +402,18 @@ export default function ManageEvents() {
     if (mode === "online") {
       // Clear venue-related data
       setSelectedVenue(null);
-      setRows(["A"]); // Single price row for online
+      setRows([]); // No rows array for online (we use single price field)
 
       // Clear old price fields
       Object.keys(newForm).forEach((key) => {
-        if (key.startsWith("price") && key !== "priceA") {
+        if (key.startsWith("price") && key !== "price") {
           delete newForm[key];
         }
       });
 
-      // Initialize priceA if not exists
-      if (!newForm.priceA) {
-        newForm.priceA = "";
+      // Initialize price if not exists
+      if (newForm.price === undefined) {
+        newForm.price = "";
       }
 
       // Reset address to empty for online input
@@ -419,10 +460,10 @@ export default function ManageEvents() {
     try {
       await deleteDoc(doc(db, "events", deleteId));
       setEvents((prev) => prev.filter((e) => e.id !== deleteId));
-      alert("Event deleted successfully!");
+      showSuccess("Event deleted successfully!");
     } catch (error) {
       console.error("Error deleting event:", error);
-      alert("Failed to delete event. Please try again.");
+      showError("Failed to delete event. Please try again.");
     } finally {
       setShowDeleteConfirm(false);
       setDeleteId(null);
@@ -444,8 +485,8 @@ export default function ManageEvents() {
       filterOnline === ""
         ? true
         : filterOnline === "online"
-        ? e.mode === "online"
-        : e.mode === "offline";
+          ? e.mode === "online"
+          : e.mode === "offline";
     return matchesName && matchesType && matchesOnline;
   });
 
@@ -463,9 +504,7 @@ export default function ManageEvents() {
 
   return (
     <div className="p-6 w-full">
-      <h2 className="text-3xl font-bold mb-6 text-[#111]">
-        Admin – Manage Events
-      </h2>
+      
 
       {/* FILTERS */}
       <div className="flex flex-wrap gap-4 mb-6 items-center">
@@ -545,8 +584,8 @@ export default function ManageEvents() {
                 <FaCalendarAlt />{" "}
                 {event?.date
                   ? new Date(
-                      event.date.toDate ? event.date.toDate() : event.date
-                    ).toLocaleString()
+                    event.date.toDate ? event.date.toDate() : event.date
+                  ).toLocaleString()
                   : "No date"}
               </div>
               <div className="text-gray-500 text-sm flex items-center gap-2 mb-1">
@@ -732,17 +771,33 @@ export default function ManageEvents() {
 
               {/* Mode-specific fields */}
               {form.mode === "online" ? (
-                <div>
-                  <label className="font-medium text-gray-700 mb-1 block">
-                    Online Address/URL
-                  </label>
-                  <input
-                    className="border p-3 rounded-xl w-full focus:border-teal-500 focus:ring-1 focus:ring-teal-300"
-                    value={form.address}
-                    onChange={(e) => updateFormField("address", e.target.value)}
-                    placeholder="e.g., Zoom link, YouTube URL, website"
-                  />
-                </div>
+                <>
+                  <div>
+                    <label className="font-medium text-gray-700 mb-1 block">
+                      Online Address/URL
+                    </label>
+                    <input
+                      className="border p-3 rounded-xl w-full focus:border-teal-500 focus:ring-1 focus:ring-teal-300"
+                      value={form.address}
+                      onChange={(e) => updateFormField("address", e.target.value)}
+                      placeholder="e.g., Zoom link, YouTube URL, website"
+                    />
+                  </div>
+
+                  <div className="mt-3">
+                    <label className="font-medium text-gray-700 mb-1 block">
+                      Ticket Price
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="border p-3 rounded-xl w-full focus:border-teal-500 focus:ring-1 focus:ring-teal-300"
+                      value={form.price || ""}
+                      onChange={(e) => updateFormField("price", e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </>
               ) : (
                 <div>
                   <label className="font-medium text-gray-700 mb-1 block">
@@ -874,10 +929,11 @@ export default function ManageEvents() {
                 Cancel
               </button>
               <button
-                className="px-4 py-2 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition"
+                className={`px-4 py-2 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed`}
                 onClick={handleSave}
+                disabled={loading}
               >
-                Save Changes
+                {loading ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>

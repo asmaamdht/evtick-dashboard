@@ -92,7 +92,25 @@ export default function UsersPageAD() {
   const handleSaveEdit = async () => {
     if (!editingUser) return;
 
-    if (editFormData.phone && !validateEgyptianPhone(editFormData.phone)) {
+     if (!editFormData.fullName || !editFormData.fullName.trim()) {
+      return Swal.fire({
+        icon: 'error',
+        text: 'Full Name cannot be empty.',
+        confirmButtonColor: '#d33'
+      });
+    }
+
+    // Validate Phone (Required)
+    if (!editFormData.phone || !editFormData.phone.trim()) {
+      return Swal.fire({
+        icon: 'error',
+        text: 'Phone Number cannot be empty.',
+        confirmButtonColor: '#d33'
+      });
+    }
+
+    // Validate Phone Format
+    if (!validateEgyptianPhone(editFormData.phone)) {
         return Swal.fire({
             icon: 'error',
             title: 'Invalid Phone',
@@ -101,6 +119,10 @@ export default function UsersPageAD() {
         });
     }
 
+
+
+
+    
     try {
       const userRef = doc(db, "users", editingUser.id);
       await updateDoc(userRef, editFormData);
@@ -124,7 +146,7 @@ export default function UsersPageAD() {
       showCancelButton: true,
       confirmButtonColor: "#ef4444",
       cancelButtonColor: "#0f9386",
-      confirmButtonText: "Yes, delete it!"
+      confirmButtonText: "Confirm"
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
@@ -167,8 +189,8 @@ export default function UsersPageAD() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-800">User Management</h2>
-          <p className="text-gray-500 text-xs md:text-sm mt-1">Manage user access and roles.</p>
+          
+          <p className="text-gray-500 text-xs md:text-lg mt-1">Manage user access and roles.</p>
         </div>
         <div className="bg-teal-500 px-4 py-2 rounded-full shadow-sm border border-gray-100 flex items-center gap-2 self-end md:self-auto">
             <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>

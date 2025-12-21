@@ -109,6 +109,7 @@ export const getTotalRevenueAD = createAsyncThunk(
                     total += Number(ticket.price || 0);
                 });
             }
+            total += Number(data.serviceFee) || 0;
         });
 
         return total;

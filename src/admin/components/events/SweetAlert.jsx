@@ -6,6 +6,7 @@ export const showSuccess = (message) => {
     title: message,
     timer: 1500,
     showConfirmButton: false,
+    iconColor: "#0F9386",
   });
 };
 
@@ -13,6 +14,7 @@ export const showError = (message) => {
   return Swal.fire({
     icon: "error",
     title: message,
+    confirmButtonColor: "#ef4444",
   });
 };
 
