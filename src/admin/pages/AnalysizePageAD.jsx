@@ -168,7 +168,7 @@ function AnalysizePageAD() {
             </div>
 
             <div
-                className="lg:-mt-[50px] z-10"
+                className="lg:-mt-[50px] z-10 "
                 style={{
                     gridArea: "pbar",
                     // marginTop: "-50px", // Moved to Tailwind lg:-mt-[50px]
