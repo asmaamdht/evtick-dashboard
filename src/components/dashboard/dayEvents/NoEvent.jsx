@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import person from "../../../assets/images/person";
+import person from "../../../assets/images/person.png";
 
 function NoEvent() {
     const navigate = useNavigate();
