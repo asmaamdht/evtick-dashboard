@@ -1,6 +1,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import person from "src/assets/images/person.png";
 
 
 function NoEvent() {
@@ -28,7 +29,7 @@ function NoEvent() {
                 <div className="flex items-center gap-4">
 
                     <img
-                        src="src/assets/images/person.png"
+                        src={person}
                         alt="profile"
                         className=" object-cover w-20 h-52 "
                     />
