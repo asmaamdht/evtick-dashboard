@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import personAd from "src/assets/images/personAd.png";
 import AnalyticsCardAD from "../components/dashboard/analyticsCardAD/AnalyticsCardAD";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -62,7 +63,7 @@ function DashboardPageAD() {
 
       <div className="flex flex-col gap-6 pr-2 rounded-xl fle-[1] flex-shrink-0  ">
         <SpecialOfferCard
-          image="src/assets/images/personAd.png"
+          image={personAd}
           title="Event Highlight"
           subtitle="Check This Events"
           buttonText="Manage Event"
