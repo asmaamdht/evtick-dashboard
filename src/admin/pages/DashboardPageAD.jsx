@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import personAd from "src/assets/images/personAd.png";
+import personAd from "../../assets/images/personAd";
 import AnalyticsCardAD from "../components/dashboard/analyticsCardAD/AnalyticsCardAD";
 import { useDispatch, useSelector } from "react-redux";
 import {
